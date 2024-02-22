@@ -1,5 +1,19 @@
+# Load required libraries
+require(tools)
+require(shiny)
+require(shinythemes)
+require(tidyverse)
+require(gginnards)
+require(rhandsontable)
+require(DT)
+require(Cairo)
+require(readxl)
+require(writexl)
+enableEMFformatExport <- TRUE
+if(enableEMFformatExport)
+  require(devEMF)
+  
 # General parameters
-# cssFile <- "www/global.css"
 defaultTheme <- "spacelab"
 htmlHeaderFile <- "iScatter.html"
 labelsFile <- "iScatter.labels.txt"
@@ -9,17 +23,11 @@ availableColumnSeparatorsDisplay <- c("tabulation (\\t)", "espace", "virgule (,)
 availableColumnSeparators <- c("\t", " ", ",", ";")
 availableEncodingsDisplay <- c("Unicode (UTF-8)","Windows (latin-1)", "Windows (latin-9)", "Mac OS (MacRoman)", "inconnu")
 availableEncodings <- c("UTF-8","latin-1", "latin-9", "macintosh", "unknown")
-# availableOutputFormats <- c("PNG","PDF", "EPS")
-# availableOutputFormatExtensions <- c(".png", ".pdf", ".eps")
 availableOutputFormats <- c("PNG","PDF", "EPS", "EMF")
 availableOutputFormatExtensions <- c(".png", ".pdf", ".eps", ".emf")
-# availableOutputFormats <- c("PNG","PDF", "SVG", "EPS")
-# availableOutputFormatExtensions <- c(".png", ".pdf", ".svg", ".eps")
 availableDataFileOutputFormats = c("XLSX", "TSV", "CSV")
 availableDataFileOutputFormatExtensions = c(".xlsx", ".tsv", ".csv")
 availableUnitsForImageExport <- c("cm","in","mm")
-# textSize <- 14
-# textSizeAxes <- 12
 exportedImagesUnit <- "cm"
 defaultExportedPlotWidth <- 30
 defaultExportedPlotHeight <- 20
@@ -27,27 +35,9 @@ figureDisplayRefreshRateMilliseconds <- 200
 maxUploadSizeMB <- 200
 scatterplotPointsDefaultColor <- "#000000"
 scatterplotPointsDefaultShape <- 16
-enableExcelCompatibility <- TRUE
-enableEMFformatExport <- TRUE
 defaultPointsSize <- 2
 defaultRegressionLinesSize <- 1
 defaultFigureTextSize <- 16
-
-# Load required libraries
-library(tools)
-library(shiny)
-library(shinythemes)
-# library(shinyjs)
-library(tidyverse)
-library(gginnards)
-library(rhandsontable)
-library(DT)
-library(Cairo)
-if(enableExcelCompatibility)
-  library(readxl)
-if(enableEMFformatExport)
-  library(devEMF)
-library(writexl)
 
 getLabelOrPrompt <- function(code, labelsAndPromptsReference) {
   selectedRow <- labelsAndPromptsReference[labelsAndPromptsReference$entry==code,]
