@@ -14,6 +14,7 @@ if(enableEMFformatExport)
   require(devEMF)
   
 # General parameters
+maxUploadSizeMB <- 20  # max data file upload size, modify to allow larger files
 defaultTheme <- "spacelab"
 htmlHeaderFile <- "iScatter.html"
 labelsFile <- "iScatter.labels.txt"
@@ -32,7 +33,6 @@ exportedImagesUnit <- "cm"
 defaultExportedPlotWidth <- 30
 defaultExportedPlotHeight <- 20
 figureDisplayRefreshRateMilliseconds <- 200
-maxUploadSizeMB <- 200
 scatterplotPointsDefaultColor <- "#000000"
 scatterplotPointsDefaultShape <- 16
 defaultPointsSize <- 2
