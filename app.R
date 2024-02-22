@@ -1,8 +1,8 @@
 # General parameters
 # cssFile <- "www/global.css"
 defaultTheme <- "spacelab"
-htmlHeaderFile <- "interactive_scatterplot_explorer.html"
-labelsFile <- "interactive_scatterplot_explorer.labels.txt"
+htmlHeaderFile <- "iScatter.html"
+labelsFile <- "iScatter.labels.txt"
 nRowsDisplayedInFilePreview <- 20
 nStepsInScaleSettings <- 10
 availableColumnSeparatorsDisplay <- c("tabulation (\\t)", "espace", "virgule (,)" ,"point-virgule (;)")

@@ -1,0 +1,98 @@
+entry	displayedLabel
+windowTitle	iScatter - Interactive scatterplots
+datafileInputLabel	Data file
+browseInputFileLabel	File selection
+noFileSelectedPrompt	No file
+columnSeparatorSelectorLabel	Column separator
+sheetSelectorLabel	Sheet
+loadedFilePreviewDialogLabel	Preview data file
+loadedFilePreviewErrorMessage	Unable to read file. Try another encoding and/or check that your file format is compatible.
+loadedFilePreviewWarningMessage	Error reading file. Check that the display below matches your data file.
+nLinesDisplayedInPreviewLabel	Maximum number of lines displayed
+fileEncodingLabel	File encoding
+filePreviewCancelButtonLabel	Cancel
+filePreviewValidateButtonLabel	Load
+generalInstructionsOnTabDisplay	The contents of tabs other than "Variable selection" and "Data filtering" are displayed only if variables X and Y are selected.
+variablesChoiceTabLabel	Variable selection
+generalDisplayParametersTabLabel	Scatterplot parameters
+descriptiveStatisticsTabLabel	Descriptive statistics
+nonNumericColsIncludedInDependentVariableChoiceLabel	Include columns not recognized as numerical in dependent variable selection
+dependentVariableInputLabel	Dependent variable
+noNumericVariableWarning	No numeric variable !
+emptyCellsLabel	(empty cells)
+scatterplotLimitsModeLabel	Limit values
+scatterplotLimitsModeChoiceAuto	Automatic
+scatterplotLimitsModeChoiceFixed	Fixed
+scatterplotLowLimitXLabel	Minimum X
+scatterplotHighLimitXLabel	Maximum X
+scatterplotLowLimitYLabel	Minimum Y
+scatterplotHighLimitYLabel	Maximum Y
+reverseAxesLabel	Reverse axis orientation
+plotDownloadFormatLabel	Image format
+exportedPlotWidthLabel	Width
+exportedPlotHeightLabel	Height
+exportedPlotUnitsLabel	Unit
+scatterplotSubstringInExportedImageName	_scatterplot
+nDecimalPlacesInputLabel	Maximum number of decimals displayed in descriptive statistics
+descriptiveStatisticsGeneralInfo	Descriptive statistics
+xVariableInDescriptiveStats	Variable X :
+yVariableInDescriptiveStats	Variable Y :
+nValuesPrompt	Number of values : 
+meanValuePrompt	Mean value : 
+sdValuePrompt	Standard deviation : 
+medianValuePrompt	Median : 
+firstQuartileValuePrompt	1st quartile : 
+thirdQuartileValuePrompt	3rd quartile : 
+interquartileRangeValuePrompt	Interquartile range : 
+modeValuePrompt	Mode : 
+minValuePrompt	Minimum : 
+maxValuePrompt	Maximum : 
+rangeValuePrompt	Range : 
+dataFilteringTabLabel	Data filtering
+dependentVariableInputLabelX	 X variable
+dependentVariableInputLabelY	Y variable
+exchangeXYvariablesLabel	X <-> Y
+groupColInIndepVar1Table	Value
+countsColInIndepVar1Table	Count
+includeColInIndepVar1Table	Include
+groupColInIndepVar2Table	Value
+countsColInIndepVar2Table	Number
+includeColInIndepVar2Table	Include
+independentVariable1ChoiceTabLabel	Independent var. 1 (color)
+selectAllIndepVar1ButtonLabel	All groups
+unselectAllIndepVar1ButtonLabel	None
+revertSelectionIndepVar1ButtonLabel	Reverse selection
+independentVariable1InputLabel	Independent variable 1
+independentVariable2ChoiceTabLabel	Independent var. 2 (shape)
+selectAllIndepVar2ButtonLabel	All groups
+unselectAllIndepVar2ButtonLabel	None
+revertSelectionIndepVar2ButtonLabel	Reverse selection
+independentVariable2InputLabel	Independent variable 2
+figureExportTabLabel	Export figure
+figureDownloadButtonLabel	Download figure
+figureTextSizeSliderInputLabel	Text size
+pointsSizeSliderInputLabel	Points size
+regressionLinesSizeSliderInputLabel	Size of regression lines
+toggleRegressionLinesDisplayLabel	Show regression lines
+correlationsTabLabel	Correlations
+correlationsTableNvaluesLabel	# values
+correlationsTablePearsonCorrelationLabel	r (Pearson)
+correlationsTableSpearmanCorrelationLabel	ρ (Spearman)
+correlationsTablePooledModalitiesLabel	*ALL*
+correlationsTabDownloadButtonLabel	Download table
+filteringDTdisplay_emptyTable	No data to display
+filteringDTdisplay_info	Display _START_ to _END_ lines out of _TOTAL_
+filteringDTdisplay_infoFiltered	 (filtered from a total of _MAX_ lines)
+filteringDTdisplay_lengthMenu	Display _MENU_ lines
+filteringDTdisplay_zeroRecords	No matching lines found
+filteringDTdisplay_first	First
+filteringDTdisplay_last	Last
+filteringDTdisplay_next	Next
+filteringDTdisplay_previous	Previous
+naStringsFileImportLabel	Undefined values (one code per line)
+identicalIndependentVariablesWarningMessage	Warning: independent variables 1 and 2 identical. Filtering disabled for independent variable 2.
+exportedCorrelationsTableDefaultPrefix	correlations
+displaySelectedDataDetailInTableFlagLabel	Display details of selected values in a table
+selectedDataDownloadFormatLabel	File format
+selectedDataDownloadInfo	Export selected subset
+defaultSuffixInExportedDataFileName	_selecteddata
