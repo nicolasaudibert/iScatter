@@ -2453,19 +2453,32 @@ myApp <- shinyApp(
             theme(panel.border=element_rect(fill=NA, colour = "grey")) +
             theme(text = element_text(size=values$figureTextSize), axis.text.x = element_text(size=.8*values$figureTextSize), axis.text.y = element_text(size=.8*values$figureTextSize)) +
             xlab(values$dependentVariableX) +
-            ylab(values$dependentVariableY) +
-            coord_cartesian(
-              xlim = c(values$scatterplotLowLimitX, values$scatterplotHighLimitX),
-              ylim = c(values$scatterplotLowLimitY, values$scatterplotHighLimitY)
-              )
-          
+            ylab(values$dependentVariableY) # +
+            # coord_cartesian(
+            #   xlim = c(values$scatterplotLowLimitX, values$scatterplotHighLimitX),
+            #   ylim = c(values$scatterplotLowLimitY, values$scatterplotHighLimitY)
+            #   )
+             
           # Reverse axes if requested
-          if(values$reverseXaxis)
+          if(values$reverseXaxis) {
+            xlimValues <- c(values$scatterplotHighLimitX, values$scatterplotLowLimitX)
             currentDatasetFigure <- currentDatasetFigure +
               scale_x_reverse()
-          if(values$reverseYaxis)
+          } else {
+            xlimValues <- c(values$scatterplotLowLimitX, values$scatterplotHighLimitX)
+          }
+          if(values$reverseYaxis) {
+            ylimValues <- c(values$scatterplotHighLimitY, values$scatterplotLowLimitY)
             currentDatasetFigure <- currentDatasetFigure +
-            scale_y_reverse()
+              scale_y_reverse()
+          } else {
+            ylimValues <- c(values$scatterplotLowLimitY, values$scatterplotHighLimitY)
+          }
+          currentDatasetFigure <- currentDatasetFigure +
+            coord_cartesian(
+              xlim = xlimValues,
+              ylim = ylimValues
+              )
           
           # # If a row is selected on the table with selected points details, higlight it on the plot
           # if(!is.null(values$clickedSubset) && nrow(values$clickedSubset)>0 && !is.null(values$selectedRowInClickedSubset)) {
