@@ -1,6 +1,10 @@
 # iScatter - Interactive scatterplots
 Shiny app to import a data file, choose 2 quantitative variables, and display a scatterplot that you can parameterize and explore in an interactive way.
 
+If you use the app, please cite this article (in French):
+Audibert, N. (2024). iHist et iScatter, outils en ligne d’exploration interactive de données : application aux valeurs aberrantes de f0 et de formants. Actes des 35èmes Journées d'Études sur la Parole (JEP 2024), Juillet 2024, Toulouse, France, pp.598-607. ⟨hal-04623107⟩
+https://inria.hal.science/hal-04623107v1/document
+
 Try the app online:
 - English version: https://shiny.laboratoirephonetiquephonologie.fr/iScatter/
 - French version: https://shiny.laboratoirephonetiquephonologie.fr/iScatter_fr/
