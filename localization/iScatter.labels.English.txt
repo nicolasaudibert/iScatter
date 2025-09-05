@@ -74,6 +74,11 @@ figureTextSizeSliderInputLabel	Text size
 pointsSizeSliderInputLabel	Points size
 regressionLinesSizeSliderInputLabel	Size of regression lines
 toggleRegressionLinesDisplayLabel	Show regression lines
+toggleEllipsesDisplayLabel	Show dispersion ellipses
+ellipseLevelSliderInputLabel	Ellipses confidence level
+ellipseAlphaSliderInputLabel	Ellipses transparency
+ellipseLinewidthSliderInputLabel	Ellipses line width
+fillEllipsesCheckboxLabel	Fill ellipses
 correlationsTabLabel	Correlations
 correlationsTableNvaluesLabel	# values
 correlationsTablePearsonCorrelationLabel	r (Pearson)

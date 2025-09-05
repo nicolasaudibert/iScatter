@@ -74,6 +74,11 @@ figureTextSizeSliderInputLabel	Taille du texte
 pointsSizeSliderInputLabel	Taille des points
 regressionLinesSizeSliderInputLabel	Taille des droites de régression
 toggleRegressionLinesDisplayLabel	Afficher les droites de régression
+toggleEllipsesDisplayLabel	Afficher les ellipses de dispersion
+ellipseLevelSliderInputLabel	Niveau de confiance des ellipses
+ellipseAlphaSliderInputLabel	Transparence des ellipses
+ellipseLinewidthSliderInputLabel	Épaisseur du trait des ellipses
+fillEllipsesCheckboxLabel	Remplir les ellipses
 correlationsTabLabel	Corrélations
 correlationsTableNvaluesLabel	Nb. valeurs
 correlationsTablePearsonCorrelationLabel	r (Pearson)
