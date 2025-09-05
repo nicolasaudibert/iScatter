@@ -2,6 +2,7 @@
 require(tools)
 require(shiny)
 require(shinythemes)
+require(shinyjs)
 require(tidyverse)
 require(gginnards)
 require(rhandsontable)
@@ -38,6 +39,10 @@ scatterplotPointsDefaultShape <- 16
 defaultPointsSize <- 2
 defaultRegressionLinesSize <- 1
 defaultFigureTextSize <- 16
+# Default parameters for stat_ellipse
+defaultEllipseLevel <- 0.95
+defaultEllipseAlpha <- 0.5
+defaultEllipseLinewidth <- 1
 
 getLabelOrPrompt <- function(code, labelsAndPromptsReference) {
   selectedRow <- labelsAndPromptsReference[labelsAndPromptsReference$entry==code,]
@@ -53,7 +58,7 @@ myApp <- shinyApp(
   # UI side of the app: define layout
   ui = fluidPage(
     theme = shinytheme(defaultTheme),
-    # useShinyjs(),
+    useShinyjs(),
     # includeCSS(cssFile),
     # Page title
     titlePanel("", windowTitle = getLabelOrPrompt("windowTitle", displayedLabelsAndPrompts)),
@@ -171,9 +176,42 @@ myApp <- shinyApp(
                                            value = defaultRegressionLinesSize,
                                            width="100%")
                      )
+                   ),
+                   # Ellipse parameters
+                   fluidRow(
+                     column(3, checkboxInput("displayEllipsesCheckbox", getLabelOrPrompt("toggleEllipsesDisplayLabel", displayedLabelsAndPrompts)), align="center"),
+                     column(3, sliderInput(inputId = "ellipseLevel",
+                                           label = getLabelOrPrompt("ellipseLevelSliderInputLabel", displayedLabelsAndPrompts),
+                                           min = 50,
+                                           max = 99,
+                                           step = 1,
+                                           value = defaultEllipseLevel * 100,
+                                           post = "%",
+                                           width="100%")
+                     ),
+                     column(3, sliderInput(inputId = "ellipseLinewidth",
+                                           label = getLabelOrPrompt("ellipseLinewidthSliderInputLabel", displayedLabelsAndPrompts),
+                                           min = 0.2,
+                                           max = 3,
+                                           step = 0.2,
+                                           value = defaultEllipseLinewidth,
+                                           width="100%")
+                     )
+                   ),
+                   fluidRow(
+                     column(3, checkboxInput("fillEllipsesCheckbox", getLabelOrPrompt("fillEllipsesCheckboxLabel", displayedLabelsAndPrompts)), align="center"),
+                     column(3, sliderInput(inputId = "ellipseAlpha",
+                                         label = getLabelOrPrompt("ellipseAlphaSliderInputLabel", displayedLabelsAndPrompts),
+                                         min = 10,
+                                         max = 100,
+                                         step = 5,
+                                         value = defaultEllipseAlpha * 100,
+                                         post = "%",
+                                         width="100%")
                    )
                  ),
                  value = "generalDisplayParametersTabLabel"
+              )
         ),
         tabPanel(getLabelOrPrompt("descriptiveStatisticsTabLabel", displayedLabelsAndPrompts),
            # Panel displayed only when a dependent variable is set, and there is at least 2 data points to be displayed
@@ -301,6 +339,12 @@ myApp <- shinyApp(
        displaySelectedDataDetailInTableFlag = 0,
        figureTextSize = defaultFigureTextSize,
        regressionLinesSize = defaultRegressionLinesSize,
+       # Reactive values for ellipses
+       displayEllipses = FALSE,
+       ellipseLevel = defaultEllipseLevel,
+       ellipseAlpha = defaultEllipseAlpha,
+       ellipseLinewidth = defaultEllipseLinewidth,
+       fillEllipses = FALSE,
        reverseXaxis = FALSE,
        reverseYaxis = FALSE,
        nDecimalPlacesX = 0,
@@ -308,6 +352,12 @@ myApp <- shinyApp(
        descriptiveStatisticsInfoText = "",
        lastParameterChangeTime = Sys.time()
       )
+    
+    # Initialize ellipse controls as disabled
+    shinyjs::disable("ellipseLevel")
+    shinyjs::disable("ellipseAlpha")
+    shinyjs::disable("ellipseLinewidth")
+    shinyjs::disable("fillEllipsesCheckbox")
     
     # Dialog box displayed when a text file is loaded to let the user choose the column separator
     displayLoadedFilePreviewDialog <- function(selectedFile, defaultMainParameterValue) {
@@ -363,7 +413,7 @@ myApp <- shinyApp(
             column(6, uiOutput("naStringsFileImport"))
           ),
           htmlOutput("inputFilePreviewMessage"),
-          tableOutput("inputFilePreview"),
+          DT::dataTableOutput("inputFilePreview"),
           title = getLabelOrPrompt("loadedFilePreviewDialogLabel", displayedLabelsAndPrompts),
           easyClose = FALSE,
           footer = tagList(
@@ -380,16 +430,26 @@ myApp <- shinyApp(
     updateLoadedTextFilePreviewDisplay <- function() {
       df = loadDataFile(values$nLinesDisplayedInPreview)
       if(!is.null(df)) {
-        output$inputFilePreview <- renderTable(
+        output$inputFilePreview <- DT::renderDataTable(
           df,
-          spacing = 'xs',
-          bordered = TRUE,
-          striped = TRUE,
-          align = "c",
-          na = ""
+          options = list(
+            scrollX = TRUE,
+            scrollY = "300px",
+            pageLength = 10,
+            lengthChange = FALSE,
+            searching = FALSE,
+            info = FALSE,
+            paging = FALSE,
+            ordering = FALSE,
+            autoWidth = TRUE,
+            columnDefs = list(list(className = 'dt-center', targets = "_all"))
+          ),
+          rownames = FALSE,
+          escape = FALSE,
+          class = "cell-border stripe compact"
         )
       } else {
-        output$inputFilePreview <- renderTable(NULL)
+        output$inputFilePreview <- DT::renderDataTable(NULL)
       }
       if(!is.null(values$associatedMessage)) {
         output$inputFilePreviewMessage <- renderText(HTML(paste0("<p>", values$associatedMessage, "</p>")))
@@ -1002,6 +1062,7 @@ myApp <- shinyApp(
         output$plotScatter <- renderPlot({values$currentDatasetScatterplot})
       }
     })
+    
     observeEvent(input$scatterplotHighLimitX, {
       if(is.na(values$scatterplotHighLimitX) || values$scatterplotHighLimitX != input$scatterplotHighLimitX) {
         values$scatterplotHighLimitX = input$scatterplotHighLimitX
@@ -1009,6 +1070,7 @@ myApp <- shinyApp(
         output$plotScatter <- renderPlot({values$currentDatasetScatterplot})
       }
     })
+    
     observeEvent(input$scatterplotLowLimitY, {
       if(is.na(values$scatterplotLowLimitY) || values$scatterplotLowLimitY != input$scatterplotLowLimitY) {
         values$scatterplotLowLimitY = input$scatterplotLowLimitY
@@ -1016,6 +1078,7 @@ myApp <- shinyApp(
         output$plotScatter <- renderPlot({values$currentDatasetScatterplot})
       }
     })
+    
     observeEvent(input$scatterplotHighLimitY, {
       if(is.na(values$scatterplotHighLimitY) || values$scatterplotHighLimitY != input$scatterplotHighLimitY) {
         values$scatterplotHighLimitY = input$scatterplotHighLimitY
@@ -1043,6 +1106,7 @@ myApp <- shinyApp(
         output$plotScatter <- renderPlot({values$currentDatasetScatterplot})
       }
     })
+    
     # When the regression lines size is changed, update figure and text display
     observeEvent(input$regressionLinesSize, {
       if(values$regressionLinesSize != input$regressionLinesSize) {
@@ -1052,6 +1116,71 @@ myApp <- shinyApp(
         output$plotScatter <- renderPlot({values$currentDatasetScatterplot})
       }
     })
+    
+    # When ellipses display is turned on or off, update figure and text display,
+    # and enable/disable ellipse controls based checkbox value
+    observeEvent(input$displayEllipsesCheckbox, {
+      if(input$displayEllipsesCheckbox) {
+        shinyjs::enable("ellipseLevel")
+        shinyjs::enable("ellipseAlpha")
+        shinyjs::enable("ellipseLinewidth")
+        shinyjs::enable("fillEllipsesCheckbox")
+      } else {
+        shinyjs::disable("ellipseLevel")
+        shinyjs::disable("ellipseAlpha")
+        shinyjs::disable("ellipseLinewidth")
+        shinyjs::disable("fillEllipsesCheckbox")
+      }
+      
+      # Existing code for updating the plot
+      if(values$displayEllipses != input$displayEllipsesCheckbox) {
+        values$lastParameterChangeTime = Sys.time()
+        values$displayEllipses <- input$displayEllipsesCheckbox
+        values$currentDatasetScatterplot <- plottedFigure()
+        output$plotScatter <- renderPlot({values$currentDatasetScatterplot})
+      }
+    })
+    
+    # When the ellipse level is changed, update figure display
+    observeEvent(input$ellipseLevel, {
+      if(values$ellipseLevel != (input$ellipseLevel / 100)) {
+        values$lastParameterChangeTime = Sys.time()
+        values$ellipseLevel <- input$ellipseLevel / 100
+        values$currentDatasetScatterplot <- plottedFigure()
+        output$plotScatter <- renderPlot({values$currentDatasetScatterplot})
+      }
+    })
+    
+    # When the ellipse alpha is changed, update figure display
+    observeEvent(input$ellipseAlpha, {
+      if(values$ellipseAlpha != (input$ellipseAlpha / 100)) {
+        values$lastParameterChangeTime = Sys.time()
+        values$ellipseAlpha <- input$ellipseAlpha / 100
+        values$currentDatasetScatterplot <- plottedFigure()
+        output$plotScatter <- renderPlot({values$currentDatasetScatterplot})
+      }
+    })
+    
+    # When the ellipse linewidth is changed, update figure display
+    observeEvent(input$ellipseLinewidth, {
+      if(values$ellipseLinewidth != input$ellipseLinewidth) {
+        values$lastParameterChangeTime = Sys.time()
+        values$ellipseLinewidth <- input$ellipseLinewidth
+        values$currentDatasetScatterplot <- plottedFigure()
+        output$plotScatter <- renderPlot({values$currentDatasetScatterplot})
+      }
+    })
+    
+    # When ellipse filling is turned on or off, update figure display
+    observeEvent(input$fillEllipsesCheckbox, {
+      if(values$fillEllipses != input$fillEllipsesCheckbox) {
+        values$lastParameterChangeTime = Sys.time()
+        values$fillEllipses <- input$fillEllipsesCheckbox
+        values$currentDatasetScatterplot <- plottedFigure()
+        output$plotScatter <- renderPlot({values$currentDatasetScatterplot})
+      }
+    })
+    
     # When the figure text size is changed, update figure and text display
     observeEvent(input$figureTextSize, {
       if(values$figureTextSize != input$figureTextSize) {
@@ -2373,14 +2502,22 @@ myApp <- shinyApp(
           if(!is.null(values$independentVariable2) && values$independentVariable2!="\u00A0") {
             indepVar2defined <- TRUE
           }
-          # Build base figure
+          # Build base figure with appropriate aesthetics for ellipses
           if(indepVar1defined) {
             if(indepVar2defined) {
               # indepVar1defined & indepVar2defined
-              currentDatasetFigure <- currentDataset %>% ggplot(aes(x = .data[[values$dependentVariableX]], y = .data[[values$dependentVariableY]], colour = .data[[values$independentVariable1]], shape = .data[[values$independentVariable2]], linetype = .data[[values$independentVariable2]]))
+              if(values$fillEllipses && values$displayEllipses) {
+                currentDatasetFigure <- currentDataset %>% ggplot(aes(x = .data[[values$dependentVariableX]], y = .data[[values$dependentVariableY]], colour = .data[[values$independentVariable1]], fill = .data[[values$independentVariable1]], shape = .data[[values$independentVariable2]], linetype = .data[[values$independentVariable2]]))
+              } else {
+                currentDatasetFigure <- currentDataset %>% ggplot(aes(x = .data[[values$dependentVariableX]], y = .data[[values$dependentVariableY]], colour = .data[[values$independentVariable1]], shape = .data[[values$independentVariable2]], linetype = .data[[values$independentVariable2]]))
+              }
             } else {
               # indepVar1defined & !indepVar2defined
-              currentDatasetFigure <- currentDataset %>% ggplot(aes(x = .data[[values$dependentVariableX]], y = .data[[values$dependentVariableY]], colour = .data[[values$independentVariable1]]))
+              if(values$fillEllipses && values$displayEllipses) {
+                currentDatasetFigure <- currentDataset %>% ggplot(aes(x = .data[[values$dependentVariableX]], y = .data[[values$dependentVariableY]], colour = .data[[values$independentVariable1]], fill = .data[[values$independentVariable1]]))
+              } else {
+                currentDatasetFigure <- currentDataset %>% ggplot(aes(x = .data[[values$dependentVariableX]], y = .data[[values$dependentVariableY]], colour = .data[[values$independentVariable1]]))
+              }
             }
           } else {
             if(indepVar2defined) {
@@ -2392,12 +2529,35 @@ myApp <- shinyApp(
             }
           }
           
+          # Display ellipses if requested (must be before points to be underneath)
+          if(values$displayEllipses) {
+            if(values$fillEllipses && indepVar1defined) {
+              # Filled ellipses with polygon geometry
+              currentDatasetFigure <- currentDatasetFigure +
+                stat_ellipse(
+                  geom = "polygon", 
+                  level = values$ellipseLevel,
+                  alpha = values$ellipseAlpha,
+                  linewidth = values$ellipseLinewidth
+                )
+            } else {
+              # Outline ellipses only
+              currentDatasetFigure <- currentDatasetFigure +
+                stat_ellipse(
+                  level = values$ellipseLevel,
+                  alpha = values$ellipseAlpha,
+                  linewidth = values$ellipseLinewidth
+                )
+            }
+          }
+          
           # Display regression lines if requested
           if(values$displayRegressionLines) {
             currentDatasetFigure <- currentDatasetFigure +
               geom_smooth(linewidth = values$regressionLinesSize, method = "lm", formula = y ~ x, se = FALSE)
           }
-          # Display points
+          
+          # Display points (after ellipses and regression lines to be on top)
           currentDatasetFigure <- currentDatasetFigure +
             geom_point(size = values$pointsSize)
           
