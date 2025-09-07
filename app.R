@@ -10,10 +10,11 @@ require(DT)
 require(Cairo)
 require(readxl)
 require(writexl)
+require(readODS)
 enableEMFformatExport <- TRUE
 if(enableEMFformatExport)
   require(devEMF)
-  
+
 # General parameters
 maxUploadSizeMB <- 20  # max data file upload size, modify to allow larger files
 defaultTheme <- "spacelab"
@@ -52,14 +53,18 @@ getLabelOrPrompt <- function(code, labelsAndPromptsReference) {
     return("-- unknown label or prompt --")
   }
 }
-displayedLabelsAndPrompts <- read.table(file = labelsFile, sep = "\t", header = T, encoding = "UTF-8", quote = "", stringsAsFactors = F)
+# displayedLabelsAndPrompts <- read.table(file = labelsFile, sep = "\t", header = T, encoding = "UTF-8", quote = "", stringsAsFactors = F)
+displayedLabelsAndPrompts <- read_tsv(file = labelsFile, show_col_types = FALSE)
 
 myApp <- shinyApp(
   # UI side of the app: define layout
   ui = fluidPage(
     theme = shinytheme(defaultTheme),
     useShinyjs(),
-    # includeCSS(cssFile),
+    # Define favicon
+    tags$head(
+      tags$link(rel = "icon", type = "image/png", href = "iScatter.png?v=1")
+    ),
     # Page title
     titlePanel("", windowTitle = getLabelOrPrompt("windowTitle", displayedLabelsAndPrompts)),
     # General HTML description on top of the page (loaded from an external headerless HTML file)
@@ -73,7 +78,7 @@ myApp <- shinyApp(
         'text/tsv',
         'text/tab-separated-values,text/plain',
         'application/vnd.ms-excel',
-        # 'application/vnd.oasis.opendocument.spreadsheet',
+        'application/vnd.oasis.opendocument.spreadsheet',
         'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
       ),
       buttonLabel = getLabelOrPrompt("browseInputFileLabel", displayedLabelsAndPrompts),
@@ -86,12 +91,12 @@ myApp <- shinyApp(
       tabsetPanel(
         id = "tabsetPanelID",
         tabPanel(getLabelOrPrompt("variablesChoiceTabLabel", displayedLabelsAndPrompts), 
-          uiOutput("nonNumericColsIncludedInDependentVariableChoiceFlag"),
+          uiOutput("nonNumericColsIncludedInDependentVariableChoiceFlagUI"),
           # These column selectors are dynamically created when the file is loaded
           fluidRow(
-            column(3, uiOutput("depVarX"), align="center"),
-            column(3, uiOutput("depVarY"), align="center"),
-            column(2, uiOutput("exchangeXYvariables", align="center", style = "margin-top: 25px;"))
+            column(3, uiOutput("depVarXUI"), align="center"),
+            column(3, uiOutput("depVarYUI"), align="center"),
+            column(2, uiOutput("exchangeXYvariablesUI", align="center", style = "margin-top: 25px;"))
           ),
           value = "variablesChoiceTabLabel"
         ),
@@ -99,36 +104,29 @@ myApp <- shinyApp(
                  # These column selectors are dynamically created when the file is loaded
                  fluidRow(
                    column(12, DTOutput("filteringDT"))
-                   # column(3, uiOutput("filterVar"), align="center"),
-                   # column(4, rHandsontableOutput("filterValTable", height = 120)),
-                   # column(2, 
-                   #        uiOutput("selectAllButton", align="center"),
-                   #        uiOutput("unselectAllButton", align="center"),
-                   #        uiOutput("revertSelectionButton", align="center")
-                   # )
                  ),
                  value = "dataFilteringTabLabel"
         ),
         tabPanel(getLabelOrPrompt("independentVariable1ChoiceTabLabel", displayedLabelsAndPrompts),
           fluidRow(
-            column(3, uiOutput("independentVar1"), align="center"),
+            column(3, uiOutput("independentVar1UI"), align="center"),
             column(4, rHandsontableOutput("indepVar1Table", height = 120)),
             column(2,
-                   uiOutput("selectAllIndepVar1Button", align="center"),
-                   uiOutput("unselectAllIndepVar1Button", align="center"),
-                   uiOutput("revertSelectionIndepVar1Button", align="center")
+                   uiOutput("selectAllIndepVar1ButtonUI", align="center"),
+                   uiOutput("unselectAllIndepVar1ButtonUI", align="center"),
+                   uiOutput("revertSelectionIndepVar1ButtonUI", align="center")
             )
           ),
           value = "independentVariable1ChoiceTabLabel"
         ),
         tabPanel(getLabelOrPrompt("independentVariable2ChoiceTabLabel", displayedLabelsAndPrompts),
                  fluidRow(
-                   column(3, uiOutput("independentVar2"), align="center"),
+                   column(3, uiOutput("independentVar2UI"), align="center"),
                    column(4, rHandsontableOutput("indepVar2Table", height = 120)),
                    column(2,
-                          uiOutput("selectAllIndepVar2Button", align="center"),
-                          uiOutput("unselectAllIndepVar2Button", align="center"),
-                          uiOutput("revertSelectionIndepVar2Button", align="center")
+                          uiOutput("selectAllIndepVar2ButtonUI", align="center"),
+                          uiOutput("unselectAllIndepVar2ButtonUI", align="center"),
+                          uiOutput("revertSelectionIndepVar2ButtonUI", align="center")
                    )
                  ),
                  value = "independentVariable2ChoiceTabLabel"
@@ -139,9 +137,9 @@ myApp <- shinyApp(
                    condition="output.dependentVariableSelected",
                    # Numeric inputs for limits values, and dropdown menu to set the mode for limits adjustment to auto or manual
                    fluidRow(
-                     column(2, numericInput("scatterplotLowLimitX", getLabelOrPrompt("scatterplotLowLimitXLabel", displayedLabelsAndPrompts),NA), align="center"),
-                     column(2, numericInput("scatterplotHighLimitX", getLabelOrPrompt("scatterplotHighLimitXLabel", displayedLabelsAndPrompts),NA), align="center"),
-                     column(3, uiOutput("scatterplotLimitsMode"), align="center"),
+                     column(2, numericInput("scatterplotLowLimitX", getLabelOrPrompt("scatterplotLowLimitXLabel", displayedLabelsAndPrompts), value = NULL), align="center"),
+                     column(2, numericInput("scatterplotHighLimitX", getLabelOrPrompt("scatterplotHighLimitXLabel", displayedLabelsAndPrompts), value = NULL), align="center"),
+                     column(3, uiOutput("scatterplotLimitsModeUI"), align="center"),
                      column(5, sliderInput(inputId = "pointsSize",
                                  label = getLabelOrPrompt("pointsSizeSliderInputLabel", displayedLabelsAndPrompts),
                                  min = 1,
@@ -152,11 +150,11 @@ myApp <- shinyApp(
                      )
                    ),
                    fluidRow(
-                     column(2, numericInput("scatterplotLowLimitY", getLabelOrPrompt("scatterplotLowLimitYLabel", displayedLabelsAndPrompts),NA), align="center"),
-                     column(2, numericInput("scatterplotHighLimitY", getLabelOrPrompt("scatterplotHighLimitYLabel", displayedLabelsAndPrompts),NA), align="center"),
+                     column(2, numericInput("scatterplotLowLimitY", getLabelOrPrompt("scatterplotLowLimitYLabel", displayedLabelsAndPrompts), value = NULL), align="center"),
+                     column(2, numericInput("scatterplotHighLimitY", getLabelOrPrompt("scatterplotHighLimitYLabel", displayedLabelsAndPrompts), value = NULL), align="center"),
                      column(3, strong(getLabelOrPrompt("reverseAxesLabel", displayedLabelsAndPrompts)), style = "margin-top: 25px;"),
-                     column(1, uiOutput("reverseXaxis"), align="center", style = "margin-top: 25px;"),
-                     column(1, uiOutput("reverseYaxis"), align="center", style = "margin-top: 25px;")
+                     column(1, uiOutput("reverseXaxisUI"), align="center", style = "margin-top: 25px;"),
+                     column(1, uiOutput("reverseYaxisUI"), align="center", style = "margin-top: 25px;")
                    ),
                    fluidRow(
                      column(4, sliderInput(inputId = "figureTextSize",
@@ -209,9 +207,9 @@ myApp <- shinyApp(
                                          post = "%",
                                          width="100%")
                    )
-                 ),
-                 value = "generalDisplayParametersTabLabel"
-              )
+                 )
+              ),
+              value = "generalDisplayParametersTabLabel"
         ),
         tabPanel(getLabelOrPrompt("descriptiveStatisticsTabLabel", displayedLabelsAndPrompts),
            # Panel displayed only when a dependent variable is set, and there is at least 2 data points to be displayed
@@ -223,9 +221,9 @@ myApp <- shinyApp(
                # Label display separately to have it on the same line
                column(6, p(strong(getLabelOrPrompt("nDecimalPlacesInputLabel", displayedLabelsAndPrompts)))),
                column(1, p(strong("X"))),
-               column(2, numericInput("nDecimalPlacesX", NULL, NA, min = 0, step = 1)),
+               column(2, numericInput("nDecimalPlacesX", label = NULL, value = NULL, min = 0, step = 1)),
                column(1, p(strong("Y"))),
-               column(2, numericInput("nDecimalPlacesY", NULL, NA, min = 0, step = 1))
+               column(2, numericInput("nDecimalPlacesY", label = NULL, value = NULL, min = 0, step = 1))
              )
            ),
            value = "descriptiveStatisticsTabLabel"
@@ -236,8 +234,6 @@ myApp <- shinyApp(
              condition="output.dependentVariableSelected",
              fluidRow(
                rHandsontableOutput("correlationsTable", height = 120)
-             #   column(10, rHandsontableOutput("correlationsTable", height = 120)),
-             #   column(2, downloadButton("downloadCorrelationsTable", label = getLabelOrPrompt("correlationsTabDownloadButtonLabel", displayedLabelsAndPrompts)), align="center", style = "margin-top: 25px;")
              ),
              fluidRow(
                column(12, downloadButton("downloadCorrelationsTable", label = getLabelOrPrompt("correlationsTabDownloadButtonLabel", displayedLabelsAndPrompts)), align="center")
@@ -251,11 +247,10 @@ myApp <- shinyApp(
              condition="output.dependentVariableSelected",
              # Controls for figure export as image
              fluidRow(
-               column(3, uiOutput("plotDownloadFormat"), align="center"),
-               column(2, uiOutput("exportedPlotWidth"), align="center"),
-               column(2, uiOutput("exportedPlotHeight"), align="center"),
-               column(2, uiOutput("exportedPlotUnits"), align="center") #,
-               # column(2, downloadButton("downloadPlot", label = getLabelOrPrompt("figureDownloadButtonLabel", displayedLabelsAndPrompts)), align="center", style = "margin-top: 25px;")
+               column(3, uiOutput("plotDownloadFormatUI"), align="center"),
+               column(2, uiOutput("exportedPlotWidthUI"), align="center"),
+               column(2, uiOutput("exportedPlotHeightUI"), align="center"),
+               column(2, uiOutput("exportedPlotUnitsUI"), align="center") #,
              ),
              fluidRow(
                column(12, downloadButton("downloadPlot", label = getLabelOrPrompt("figureDownloadButtonLabel", displayedLabelsAndPrompts)), align="center")
@@ -269,7 +264,7 @@ myApp <- shinyApp(
         # Scatterplot display area
         plotOutput("plotScatter", click = "plot_click", brush = "plot_brush"),
         # Checkbox to let the user activate display of selected bin detail in a table
-        uiOutput("displaySelectedDataDetailInTableFlag"),
+        uiOutput("displaySelectedDataDetailInTableFlagUI"),
         # Table for the display of selected points detail
         rHandsontableOutput("selectedDataDetailsTable", height = 150)
       ),
@@ -278,7 +273,7 @@ myApp <- shinyApp(
         condition="output.selectedDataDetailsDisplayed",
         fluidRow(
           column(3, htmlOutput("selectedDataDownloadInfo"), align="right", style = "margin-top: 25px;"),
-          column(2, uiOutput("selectedDataDownloadFormat"), align="center"),
+          column(2, uiOutput("selectedDataDownloadFormatUI"), align="center"),
           column(2, downloadButton("downloadSelectedData"), align="left", style = "margin-top: 25px;")
         )
       )
@@ -293,7 +288,6 @@ myApp <- shinyApp(
     # Disable all tabs except the first one on page load
     hideTab(inputId = "tabsetPanelID", target = "independentVariable1ChoiceTabLabel")
     hideTab(inputId = "tabsetPanelID", target = "independentVariable2ChoiceTabLabel")
-    # hideTab(inputId = "tabsetPanelID", target = "dataFilteringTabLabel")
     hideTab(inputId = "tabsetPanelID", target = "generalDisplayParametersTabLabel")
     hideTab(inputId = "tabsetPanelID", target = "descriptiveStatisticsTabLabel")
     hideTab(inputId = "tabsetPanelID", target = "correlationsTabLabel")
@@ -303,6 +297,7 @@ myApp <- shinyApp(
     values <- reactiveValues(
        selectedFile = NULL,
        loadedFileType = NULL,
+       inputFileExtension = NULL,
        columnSeparator = "\t",
        selectedFileEncoding = "UTF-8",
        naStringsFileImport = "",
@@ -317,9 +312,6 @@ myApp <- shinyApp(
        currentDatasetScatterplot = NULL,
        clickedSubset = NULL,
        selectedRowInClickedSubset = NULL,
-       # filterVariable = NULL,
-       # filterValues = NULL,
-       # NAinFilterValues = FALSE,
        nonNumericColsIncludedInDependentVariableChoiceFlag = FALSE,
        dependentVariableX = NULL,
        dependentVariableY = NULL,
@@ -363,28 +355,24 @@ myApp <- shinyApp(
     displayLoadedFilePreviewDialog <- function(selectedFile, defaultMainParameterValue) {
       output$inputFilePreview <- renderTable(NULL)
       output$inputFilePreviewMessage <- renderText(NULL)
-      output$loadedFilePreviewMainParameterSelector <- renderUI({
+      output$loadedFilePreviewMainParameterSelectorUI <- renderUI({
         if(values$loadedFileType == "txt")
           selectInput("loadedFilePreviewMainParameterSelector", getLabelOrPrompt("columnSeparatorSelectorLabel", displayedLabelsAndPrompts), availableColumnSeparatorsDisplay, selected = defaultMainParameterValue)
         else {
           if(values$loadedFileType == "xlsx") {
-            # wb <- loadWorkbook(selectedFile)
-            # values$availableSheetNames <- names(getSheets(wb))
             values$availableSheetNames <- excel_sheets(selectedFile)
-          # } else if(values$loadedFileType == "xls") {
-          #   values$availableSheetNames <- sheetNames(selectedFile)
-          # } else if(values$loadedFileType == "ods") {
-          #   values$availableSheetNames <- ods_sheets(selectedFile)
-          } else
+          } else if(values$loadedFileType == "ods") {
+            values$availableSheetNames <- list_ods_sheets(selectedFile)
+          }
+          else
             values$availableSheetNames <- NULL
-
           selectInput("loadedFilePreviewMainParameterSelector", getLabelOrPrompt("sheetSelectorLabel", displayedLabelsAndPrompts), values$availableSheetNames)
         }
       })
-      output$fileEncoding <- renderUI({
+      output$fileEncodingUI <- renderUI({
         selectInput("fileEncoding", getLabelOrPrompt("fileEncodingLabel", displayedLabelsAndPrompts),availableEncodingsDisplay)
       })
-      output$naStringsFileImport <- renderUI({
+      output$naStringsFileImportUI <- renderUI({
         textAreaInput("naStringsFileImport", getLabelOrPrompt("naStringsFileImportLabel", displayedLabelsAndPrompts), "", rows = 3)
       })
       
@@ -403,14 +391,18 @@ myApp <- shinyApp(
         modalDialog(
           tags$script(HTML(jsCodeBindKeysWithPreviewModalButtons)),
           size = "l",
-          # includeCSS(cssFile),
           fluidRow(
-            column(6, uiOutput("loadedFilePreviewMainParameterSelector")),
-            column(6, uiOutput("fileEncoding"))
+            column(6, uiOutput("loadedFilePreviewMainParameterSelectorUI")),
+            # Conditional display of file encoding only for text files
+            if(values$loadedFileType == "txt") {
+              column(6, uiOutput("fileEncodingUI"))
+            } else {
+              column(6, NULL)  # Empty column for Excel or ODS files
+            }
           ),
           fluidRow(
             column(6, numericInput("nLinesDisplayedInPreview", label = getLabelOrPrompt("nLinesDisplayedInPreviewLabel", displayedLabelsAndPrompts), value = nRowsDisplayedInFilePreview, min = 5, step = 5)),
-            column(6, uiOutput("naStringsFileImport"))
+            column(6, uiOutput("naStringsFileImportUI"))
           ),
           htmlOutput("inputFilePreviewMessage"),
           DT::dataTableOutput("inputFilePreview"),
@@ -426,35 +418,76 @@ myApp <- shinyApp(
       updateLoadedTextFilePreviewDisplay()
     }
     
-    # Update the data file preview
     updateLoadedTextFilePreviewDisplay <- function() {
-      df = loadDataFile(values$nLinesDisplayedInPreview)
+      df <- loadDataFile(values$nLinesDisplayedInPreview)
+      
       if(!is.null(df)) {
+        # Convert to standard data.frame for compatibility
+        df <- as.data.frame(df)
+        
+        # Intelligent column width calculation
+        col_widths <- sapply(1:ncol(df), function(i) {
+          # Width based on content (all displayed rows)
+          displayed_rows <- min(values$nLinesDisplayedInPreview, nrow(df))
+          content_width <- max(nchar(as.character(df[1:displayed_rows, i])), na.rm = TRUE)
+          
+          # Width based on column name
+          header_width <- nchar(colnames(df)[i])
+          
+          # Take the maximum, with reasonable limits
+          max_width <- max(content_width, header_width, na.rm = TRUE)
+          
+          # Convert to pixels (approximate: ~8px per character + padding)
+          pixel_width <- max_width * 8 + 20
+          
+          # Limits: minimum 80px, maximum 300px
+          pmax(80, pmin(pixel_width, 300))
+        })
+        
+        # Build column definitions
+        column_defs <- list(
+          list(className = 'dt-center', targets = "_all")
+        )
+        
+        # Add width definitions
+        for(i in seq_along(col_widths)) {
+          column_defs[[length(column_defs) + 1]] <- list(
+            width = paste0(col_widths[i], "px"), 
+            targets = i - 1  # DT uses 0-based index
+          )
+        }
+        
         output$inputFilePreview <- DT::renderDataTable(
           df,
           options = list(
             scrollX = TRUE,
             scrollY = "300px",
-            pageLength = 10,
-            lengthChange = FALSE,
+            dom = 't',
+            pageLength = 20,
+            ordering = FALSE,
             searching = FALSE,
             info = FALSE,
-            paging = FALSE,
-            ordering = FALSE,
-            autoWidth = TRUE,
-            columnDefs = list(list(className = 'dt-center', targets = "_all"))
+            autoWidth = FALSE,  # Important: disable autoWidth
+            columnDefs = column_defs,
+            # Callback to force recalculation if necessary
+            initComplete = JS(
+              "function(settings, json) {",
+              "this.api().columns.adjust();",
+              "}"
+            )
           ),
           rownames = FALSE,
-          escape = FALSE,
-          class = "cell-border stripe compact"
+          class = "compact"
         )
       } else {
         output$inputFilePreview <- DT::renderDataTable(NULL)
       }
+      
       if(!is.null(values$associatedMessage)) {
         output$inputFilePreviewMessage <- renderText(HTML(paste0("<p>", values$associatedMessage, "</p>")))
-      } else
+      } else {
         output$inputFilePreviewMessage <- renderText(NULL)
+      }
     }
     
     # Load the data file as an Excel spreadsheet or as a text file
@@ -465,90 +498,94 @@ myApp <- shinyApp(
           withCallingHandlers({
           if(values$loadedFileType == "xlsx") {
             if(is.null(nLoadedRows))
-              # extractedRowIndices = NULL
               nMaxRows <- Inf
             else  
-              # extractedRowIndices = 1:(nLoadedRows+1)
               nMaxRows <- nLoadedRows+1
-            # df = read.xlsx(
-            #   values$selectedFile,
-            #   values$selectedSheetIndex,
-            #   encoding = values$selectedFileEncoding,
-            #   check.names = F,
-            #   rowIndex = extractedRowIndices
-            # )
             df <- read_excel(
               path = values$selectedFile,
               sheet = values$selectedSheetIndex,
               na = values$naStringsFileImport,
               n_max = nMaxRows
             )
-          # } else if(values$loadedFileType == "ods") {
-          #   # if(is.null(nLoadedRows))
-          #   #   extractedRowIndices = NULL
-          #   # else  
-          #   #   extractedRowIndices =  paste0("R1:R",nLoadedRows)
-          #   df = read_ods(
-          #     values$selectedFile,
-          #     values$selectedSheetIndex
-          #     #range = extractedRowIndices
-          #     )
-          } else if(values$loadedFileType == "txt") {
+          } else if(values$loadedFileType == "ods") {
             if(is.null(nLoadedRows))
-              nLoadedRows = -1
-              df = read.table(
-                values$selectedFile,
-                sep=values$columnSeparator,
-                header=T,
-                fileEncoding = values$selectedFileEncoding,
-                na.strings = values$naStringsFileImport,
-                check.names = F,
-                nrows = nLoadedRows,
-                comment.char = ""
-              )
+              nMaxRows <- Inf
+            else  
+              nMaxRows <- nLoadedRows+1
+            df <- read_ods(
+              path = values$selectedFile,
+              sheet = values$selectedSheetIndex,
+              na = values$naStringsFileImport,
+              n_max = nMaxRows
+            )
+          } else if(values$loadedFileType == "txt") {
+              if(is.null(nLoadedRows))
+                nLoadedRows = Inf
+              df <- read_delim(
+                  values$selectedFile,
+                  delim=values$columnSeparator,
+                  locale = locale(encoding=values$selectedFileEncoding),
+                  na = values$naStringsFileImport,
+                  n_max = nLoadedRows,
+                  comment = "",
+                  show_col_types = F
+                )
           } else {
-            df = NULL
+            df <- NULL
           }
         }, warning = function(war) {
           values$associatedMessage = getLabelOrPrompt("loadedFilePreviewWarningMessage", displayedLabelsAndPrompts)
           invokeRestart("muffleWarning")
         })
       }, error = function(err) {
-        df = NULL
+        df <- NULL
         values$associatedMessage = getLabelOrPrompt("loadedFilePreviewErrorMessage", displayedLabelsAndPrompts)
       })
       if(!is.data.frame(df))
-        df = NULL
+        df <- NULL
       return(df)
     }
     
-    # Event observers for the column separator selection dialog
+    # Event observer for the column separator or sheet selection dialog
     observeEvent(input$loadedFilePreviewMainParameterSelector, {
       if(!is.null(input$loadedFilePreviewMainParameterSelector)) {
-        if(values$loadedFileType == "txt" && (values$columnSeparator != availableColumnSeparators[which(availableColumnSeparatorsDisplay == input$loadedFilePreviewMainParameterSelector)])) {
-          values$columnSeparator = availableColumnSeparators[which(availableColumnSeparatorsDisplay == input$loadedFilePreviewMainParameterSelector)]
-          updateLoadedTextFilePreviewDisplay()
-        }
-        else if(values$loadedFileType != "txt" && !is.null(values$availableSheetNames) && (values$selectedSheetIndex != which(input$loadedFilePreviewMainParameterSelector == values$availableSheetNames))) {
-          values$selectedSheetIndex = which(input$loadedFilePreviewMainParameterSelector == values$availableSheetNames)
-          updateLoadedTextFilePreviewDisplay()
+        if(values$loadedFileType == "txt") {
+          newSeparator <- availableColumnSeparators[which(availableColumnSeparatorsDisplay == input$loadedFilePreviewMainParameterSelector)]
+          if(values$columnSeparator != newSeparator) {
+            values$columnSeparator <- newSeparator
+            # Immediate update after value change
+            updateLoadedTextFilePreviewDisplay()
+          }
+        } else if(values$loadedFileType != "txt" && !is.null(values$availableSheetNames)) {
+          newSheetIndex <- which(input$loadedFilePreviewMainParameterSelector == values$availableSheetNames)
+          if(values$selectedSheetIndex != newSheetIndex) {
+            values$selectedSheetIndex <- newSheetIndex
+            updateLoadedTextFilePreviewDisplay()
+          }
         }
       }
-    })
+    }, priority = 100)
+    
+    # Observer for the number of lines displayed
     observeEvent(input$nLinesDisplayedInPreview, {
-      if(values$nLinesDisplayedInPreview != input$nLinesDisplayedInPreview) {
-        values$nLinesDisplayedInPreview = input$nLinesDisplayedInPreview
+      if(!is.null(input$nLinesDisplayedInPreview) && values$nLinesDisplayedInPreview != input$nLinesDisplayedInPreview) {
+        values$nLinesDisplayedInPreview <- input$nLinesDisplayedInPreview
         updateLoadedTextFilePreviewDisplay()
       }
-    })
+    }, priority = 100)
+    
+    # Observer for encoding
     observeEvent(input$fileEncoding, {
       if(!is.null(input$fileEncoding)) {
-        if(values$selectedFileEncoding != availableEncodings[which(availableEncodingsDisplay == input$fileEncoding)]) {
-          values$selectedFileEncoding = availableEncodings[which(availableEncodingsDisplay == input$fileEncoding)]
+        newEncoding <- availableEncodings[which(availableEncodingsDisplay == input$fileEncoding)]
+        if(values$selectedFileEncoding != newEncoding) {
+          values$selectedFileEncoding <- newEncoding
           updateLoadedTextFilePreviewDisplay()
         }
       }
-    })
+    }, priority = 100)
+    
+    # Observer for strings considered as NA values
     observeEvent(input$naStringsFileImport, {
       if(!is.null(input$naStringsFileImport)) {
         naStringsRaw <- input$naStringsFileImport
@@ -556,10 +593,14 @@ myApp <- shinyApp(
         if(!"" %in% naStringsFileImportTmp) {
           naStringsFileImportTmp <- c("", naStringsFileImportTmp)
         }
-        values$naStringsFileImport <- naStringsFileImportTmp
-        updateLoadedTextFilePreviewDisplay()
+        if(!identical(values$naStringsFileImport, naStringsFileImportTmp)) {
+          values$naStringsFileImport <- naStringsFileImportTmp
+          updateLoadedTextFilePreviewDisplay()
+        }
       }
-    })
+    }, priority = 100)
+    
+    # Observers for the validation and cancel buttons of the preview modal
     observeEvent(input$validateLoadedFilePreviewButton, {
       removeModal()
       df = loadDataFile(NULL)
@@ -578,25 +619,30 @@ myApp <- shinyApp(
       if (!is.null(infile)) {
         values$selectedFile = infile$datapath
         # Adapt loading method according to the file extension
-        inputFileExtension = file_ext(infile$datapath)
+        values$inputFileExtension = file_ext(infile$datapath)
         
-        if(inputFileExtension == "xlsx" || inputFileExtension == "XLSX" || inputFileExtension == "xls" || inputFileExtension == "XLS") {
+        if(values$inputFileExtension == "xlsx" || values$inputFileExtension == "XLSX" || values$inputFileExtension == "xls" || values$inputFileExtension == "XLS") {
           
           values$loadedFileType = "xlsx"
           displayLoadedFilePreviewDialog(values$selectedFile, NULL)
+          
+        } else if(values$inputFileExtension == "ods" || values$inputFileExtension == "ODS") {
 
-        # } else if(inputFileExtension == "ods" || inputFileExtension == "ODS") {
-        #   
-        #   values$loadedFileType = "ods"
-        #   displayLoadedFilePreviewDialog(values$selectedFile, NULL)
-
-        } else if(inputFileExtension == "csv" || inputFileExtension == "CSV") {
-
+          values$loadedFileType = "ods"
+          displayLoadedFilePreviewDialog(values$selectedFile, NULL)
+          
+        } else if(values$inputFileExtension == "csv" || values$inputFileExtension == "CSV") {
+          
           values$loadedFileType = "txt"
           displayLoadedFilePreviewDialog(values$selectedFile, ",")
           
+        } else if(values$inputFileExtension == "tsv" || values$inputFileExtension == "TSV") {
+          
+          values$loadedFileType = "txt"
+          displayLoadedFilePreviewDialog(values$selectedFile, "\t")
+          
         } else {
-
+          
           values$loadedFileType = "txt"
           displayLoadedFilePreviewDialog(values$selectedFile, "\t")
           
@@ -622,9 +668,6 @@ myApp <- shinyApp(
         values$currentDatasetScatterplot <- NULL
         values$clickedSubset <- NULL
         values$selectedRowInClickedSubset <- NULL
-        # values$filterVariable <- NULL
-        # values$filterValues <- NULL
-        # values$NAinFilterValues <- FALSE
         values$dependentVariableX <- NULL
         values$dependentVariableY <- NULL
         values$independentVariable1 <- "\u00A0"
@@ -670,7 +713,6 @@ myApp <- shinyApp(
         # Disable all tabs except the first one
         hideTab(inputId = "tabsetPanelID", target = "independentVariable1ChoiceTabLabel")
         hideTab(inputId = "tabsetPanelID", target = "independentVariable2ChoiceTabLabel")
-        # hideTab(inputId = "tabsetPanelID", target = "dataFilteringTabLabel")
         hideTab(inputId = "tabsetPanelID", target = "generalDisplayParametersTabLabel")
         hideTab(inputId = "tabsetPanelID", target = "descriptiveStatisticsTabLabel")
         hideTab(inputId = "tabsetPanelID", target = "correlationsTabLabel")
@@ -696,7 +738,6 @@ myApp <- shinyApp(
     
     # Function to apply the current filter (if any) to the full dataset
     filterData <- function(){
-      # df <- values$filedata
       df <- values$filteredFiledata
       if (is.null(df)) {
         return(NULL)
@@ -750,7 +791,6 @@ myApp <- shinyApp(
     # Detect when a valid dependent variable has been selected and there's either no filter set, or a minimum of 
     # 2 data points remaining in the filter (required for conditional display of statistics and figure)
     output$dependentVariableSelected <- reactive({
-      # return(!is.null(input$datafile) && !is.null(values$filedata) && !is.null(values$dependentVariableX) && values$dependentVariableX!="\u00A0" && values$dependentVariableX!=0 && !is.null(values$dependentVariableY) && values$dependentVariableY!="\u00A0" && values$dependentVariableY!=0 && (is.null(values$filterValues) || length(values$filterValues)>0) && !is.null(values$scatterplotData) && length(values$scatterplotData)>1)
       return(!is.null(input$datafile) && !is.null(values$filedata) && !is.null(values$dependentVariableX) && values$dependentVariableX!="\u00A0" && values$dependentVariableX!=0 && !is.null(values$dependentVariableY) && values$dependentVariableY!="\u00A0" && values$dependentVariableY!=0 && !is.null(values$scatterplotData) && length(values$scatterplotData)>1)
     })
     outputOptions(output, 'dependentVariableSelected', suspendWhenHidden=FALSE)
@@ -767,7 +807,7 @@ myApp <- shinyApp(
     })
     
     # Checkbox: display the details of the values in the clicked bin in a table
-    output$displaySelectedDataDetailInTableFlag <- renderUI({
+    output$displaySelectedDataDetailInTableFlagUI <- renderUI({
       df <- values$filedata
       if (is.null(df)) return(NULL)
       checkboxInput("displaySelectedDataDetailInTableFlag", getLabelOrPrompt("displaySelectedDataDetailInTableFlagLabel", displayedLabelsAndPrompts), TRUE, width="100%")
@@ -790,7 +830,7 @@ myApp <- shinyApp(
     })
     
     # Checkbox to force inclusion of variables not detected as numeric in the dependent variable menu
-    output$nonNumericColsIncludedInDependentVariableChoiceFlag <- renderUI({
+    output$nonNumericColsIncludedInDependentVariableChoiceFlagUI <- renderUI({
       df <-values$filedata
       if (is.null(df)) return(NULL)
       checkboxInput("nonNumericColsIncludedInDependentVariableChoiceFlag", getLabelOrPrompt("nonNumericColsIncludedInDependentVariableChoiceLabel", displayedLabelsAndPrompts), FALSE, width="100%")
@@ -814,11 +854,6 @@ myApp <- shinyApp(
                 names(items) = getLabelOrPrompt("noNumericVariableWarning", displayedLabelsAndPrompts)
               }
             }
-            # if(!is.null(values$dependentVariable) && values$dependentVariable!="" && values$dependentVariable %in% items) {
-            #   selectedItem = values$dependentVariable
-            # } else {
-            #   selectedItem = "\u00A0"
-            # }
             updateSelectInput(session, "depVarX", label = NULL, choices = items, selected = values$dependentVariableX)
             updateSelectInput(session, "depVarY", label = NULL, choices = items, selected = values$dependentVariableY)
         }
@@ -826,7 +861,7 @@ myApp <- shinyApp(
     })
     
     # Dropdown menus: dependent variables (any numeric variable)
-    output$depVarX <- renderUI({
+    output$depVarXUI <- renderUI({
       df <-values$filedata
       if (is.null(df)) return(NULL)
       
@@ -846,7 +881,7 @@ myApp <- shinyApp(
       }
       selectInput("depVarX", getLabelOrPrompt("dependentVariableInputLabelX", displayedLabelsAndPrompts), items, selected = items[1])
     })
-    output$depVarY <- renderUI({
+    output$depVarYUI <- renderUI({
       df <-values$filedata
       if (is.null(df)) return(NULL)
       
@@ -873,12 +908,7 @@ myApp <- shinyApp(
         values$lastParameterChangeTime = Sys.time()
         output$selectedDataDetailsTable <- renderRHandsontable({NULL})
         values$dependentVariableX <- input$depVarX
-        # if(is.null(values$filterVariable) || (values$filterVariable!="\u00A0" && (values$dependentVariableX==values$filterVariable || values$dependentVariableY==values$filterVariable))) {
-        #   values$filterVariable = "\u00A0"
-        #   values$filterValTable = NULL
-        # }
         if(!is.null(values$dependentVariableX) && values$dependentVariableX!="\u00A0" && values$dependentVariableX!=0  && values$dependentVariableX!="" && !is.null(values$dependentVariableY) && values$dependentVariableY!="\u00A0" && values$dependentVariableY!=0  && values$dependentVariableY!="") {
-        # if(!is.null(values$dependentVariableX) && values$dependentVariableX!="\u00A0" && values$dependentVariableX!=0  && values$dependentVariableX!="" && !is.null(values$dependentVariableY) && values$dependentVariableY!="\u00A0" && values$dependentVariableY!=0  && values$dependentVariableY!="" && !is.null(values$filteredFiledata)) {
           values$scatterplotData = getScatterplotData()
           if(!is.null(values$scatterplotData) && nrow(values$scatterplotData) > 0) {
             # Compute the appropriate number of decimal places for rounding from the range in values and update the corresponding input
@@ -907,25 +937,17 @@ myApp <- shinyApp(
             values$selectedRowInClickedSubset <- NULL
             values$currentDatasetScatterplot <- plottedFigure()
             output$plotScatter <- renderPlot({values$currentDatasetScatterplot})
-            # filterChoices = c("\u00A0",values$filedataColnames[-which(values$filedataColnames == values$dependentVariable)])
             if(!is.null(values$scatterplotData) && nrow(values$scatterplotData)>1) {
               # Show hidden tabs
               showTab(inputId = "tabsetPanelID", target = "independentVariable1ChoiceTabLabel")
               showTab(inputId = "tabsetPanelID", target = "independentVariable2ChoiceTabLabel")
-              # showTab(inputId = "tabsetPanelID", target = "dataFilteringTabLabel")
               showTab(inputId = "tabsetPanelID", target = "generalDisplayParametersTabLabel")
               showTab(inputId = "tabsetPanelID", target = "descriptiveStatisticsTabLabel")
               showTab(inputId = "tabsetPanelID", target = "correlationsTabLabel")
               showTab(inputId = "tabsetPanelID", target = "figureExportTabLabel")
             }
-          } else {
-            # filterChoices = c("\u00A0",values$filedataColnames)
           }
-        } else {
-          # filterChoices = c("\u00A0",values$filedataColnames)
         }
-        # names(filterChoices)=filterChoices
-        # updateSelectInput(session, "filterVar", getLabelOrPrompt("filterVariableInputLabel", displayedLabelsAndPrompts), choices = filterChoices, selected = values$filterVariable)
       }
     })
     
@@ -934,12 +956,7 @@ myApp <- shinyApp(
         values$lastParameterChangeTime = Sys.time()
         output$selectedDataDetailsTable <- renderRHandsontable({NULL})
         values$dependentVariableY <- input$depVarY
-        # if(is.null(values$filterVariable) || (values$filterVariable!="\u00A0" && values$dependentVariable==values$filterVariable)) {
-        #   values$filterVariable = "\u00A0"
-        #   values$filterValTable = NULL
-        # }
         if(!is.null(values$dependentVariableY) && values$dependentVariableY!="\u00A0" && values$dependentVariableY!=0  && values$dependentVariableY!="") {
-        # if(!is.null(values$dependentVariableY) && values$dependentVariableY!="\u00A0" && values$dependentVariableY!=0  && values$dependentVariableY!="" && !is.null(values$filteredFiledata)) {
           values$scatterplotData = getScatterplotData()
           if(length(values$scatterplotData) > 0) {
             # Compute the appropriate number of decimal places for rounding from the range in values and update the corresponding input
@@ -968,30 +985,22 @@ myApp <- shinyApp(
             values$selectedRowInClickedSubset <- NULL
             values$currentDatasetScatterplot <- plottedFigure()
             output$plotScatter <- renderPlot({values$currentDatasetScatterplot})
-            # filterChoices = c("\u00A0",values$filedataColnames[-which(values$filedataColnames == values$dependentVariable)])
             if(!is.null(values$scatterplotData) && nrow(values$scatterplotData)>1) {
               # Show hidden tabs
               showTab(inputId = "tabsetPanelID", target = "independentVariable1ChoiceTabLabel")
               showTab(inputId = "tabsetPanelID", target = "independentVariable2ChoiceTabLabel")
-              # showTab(inputId = "tabsetPanelID", target = "dataFilteringTabLabel")
               showTab(inputId = "tabsetPanelID", target = "generalDisplayParametersTabLabel")
               showTab(inputId = "tabsetPanelID", target = "descriptiveStatisticsTabLabel")
               showTab(inputId = "tabsetPanelID", target = "correlationsTabLabel")
               showTab(inputId = "tabsetPanelID", target = "figureExportTabLabel")
             }
-          } else {
-            # filterChoices = c("\u00A0",values$filedataColnames)
           }
-        } else {
-          # filterChoices = c("\u00A0",values$filedataColnames)
         }
-        # names(filterChoices)=filterChoices
-        # updateSelectInput(session, "filterVar", getLabelOrPrompt("filterVariableInputLabel", displayedLabelsAndPrompts), choices = filterChoices, selected = values$filterVariable)
       }
     })
     
     # Button to exchange X and Y variable
-    output$exchangeXYvariables <- renderUI({
+    output$exchangeXYvariablesUI <- renderUI({
       if(!is.null(values$dependentVariableX) && values$dependentVariableX!="\u00A0" && !is.null(values$dependentVariableY) && values$dependentVariableY!="\u00A0") {
         actionButton("exchangeXYvariables", getLabelOrPrompt("exchangeXYvariablesLabel", displayedLabelsAndPrompts))
       }
@@ -1008,7 +1017,6 @@ myApp <- shinyApp(
         updateSelectInput(session, "depVarX", selected = values$dependentVariableX)
         updateSelectInput(session, "depVarY", selected = values$dependentVariableY)
         # Update data and display
-        # values$filteredFiledata <- filterData()
         values$scatterplotData <- getScatterplotData()
         values$currentDatasetScatterplot <- plottedFigure()
         output$plotScatter <- renderPlot({values$currentDatasetScatterplot})
@@ -1019,7 +1027,7 @@ myApp <- shinyApp(
     })
     
     # Dropdown menu to set limit values in the scatterplot automatically or manually
-    output$scatterplotLimitsMode <- renderUI({
+    output$scatterplotLimitsModeUI <- renderUI({
       df <-values$filedata
       if (is.null(df)) return(NULL)
       items = c(getLabelOrPrompt("scatterplotLimitsModeChoiceAuto", displayedLabelsAndPrompts), getLabelOrPrompt("scatterplotLimitsModeChoiceFixed", displayedLabelsAndPrompts))
@@ -1192,7 +1200,7 @@ myApp <- shinyApp(
     })
     
     # Dropdown menu: independent variable 1 (any variable except dependent variable)
-    output$independentVar1 <- renderUI({
+    output$independentVar1UI <- renderUI({
       df <-values$filedata
       if (is.null(df)) return(NULL)
       
@@ -1209,7 +1217,6 @@ myApp <- shinyApp(
       }
     })
     
-    # updateIndepVar1filter <- reactive({
     updateIndepVar1filter <- function() {
         if(!is.null(input$independentVar1) && input$independentVar1!="\u00A0") {
           
@@ -1233,23 +1240,22 @@ myApp <- shinyApp(
                 hot_col(col = 3, type = "checkbox") %>%
                 hot_cols(columnSorting = TRUE, colWidths = c(150, 50, 50))
             )
-            output$selectAllIndepVar1Button <- renderUI(
+            output$selectAllIndepVar1ButtonUI <- renderUI(
               actionButton("selectAllIndepVar1Button", paste0(getLabelOrPrompt("selectAllIndepVar1ButtonLabel", displayedLabelsAndPrompts), " (", nrow(indepVar1DF), ")"))
             )
-            output$unselectAllIndepVar1Button <- renderUI(
+            output$unselectAllIndepVar1ButtonUI <- renderUI(
               actionButton("unselectAllIndepVar1Button", getLabelOrPrompt("unselectAllIndepVar1ButtonLabel", displayedLabelsAndPrompts))
             )
-            output$revertSelectionIndepVar1Button <- renderUI(
+            output$revertSelectionIndepVar1ButtonUI <- renderUI(
               actionButton("revertSelectionIndepVar1Button", getLabelOrPrompt("revertSelectionIndepVar1ButtonLabel", displayedLabelsAndPrompts))
             )
           } else {
             output$indepVar1Table <- renderRHandsontable({NULL})
-            output$selectAllIndepVar1Button <- renderUI({NULL})
-            output$unselectAllIndepVar1Button <- renderUI({NULL})
-            output$revertSelectionIndepVar1Button <- renderUI({NULL})
+            output$selectAllIndepVar1ButtonUI <- renderUI({NULL})
+            output$unselectAllIndepVar1ButtonUI <- renderUI({NULL})
+            output$revertSelectionIndepVar1ButtonUI <- renderUI({NULL})
           }
           # Update data and display
-          # values$filteredFiledata <- filterData()
           values$scatterplotData <- getScatterplotData()
           values$currentDatasetScatterplot <- plottedFigure()
           output$plotScatter <- renderPlot({values$currentDatasetScatterplot})
@@ -1259,11 +1265,10 @@ myApp <- shinyApp(
         } else {
           values$independentVariable1 = "\u00A0"
           output$indepVar1Table <- renderRHandsontable({NULL})
-          output$selectAllIndepVar1Button <- renderUI({NULL})
-          output$unselectAllIndepVar1Button <- renderUI({NULL})
-          output$revertSelectionIndepVar1Button <- renderUI({NULL})
+          output$selectAllIndepVar1ButtonUI <- renderUI({NULL})
+          output$unselectAllIndepVar1ButtonUI <- renderUI({NULL})
+          output$revertSelectionIndepVar1ButtonUI <- renderUI({NULL})
           # Update data and display
-          # values$filteredFiledata <- filterData()
           values$scatterplotData <- getScatterplotData()
           values$currentDatasetScatterplot <- plottedFigure()
           output$plotScatter <- renderPlot({values$currentDatasetScatterplot})
@@ -1282,7 +1287,6 @@ myApp <- shinyApp(
     
     # Get independent variable 1 modalities with counts, assigning a special value to empty cells if any
     getIndepVar1Table <- function() {
-      # df <- values$filedata
       df <- values$filteredFiledata
       if (is.null(df) || is.null(values$independentVariable1) || values$independentVariable1 == "\u00A0") return(NULL)
       
@@ -1323,16 +1327,12 @@ myApp <- shinyApp(
       indepVar1ValuesTmp = indepVar1DF[indepVar1DF[,3]==TRUE,1]
       if(length(indepVar1ValuesTmp)==0)
         indepVar1ValuesTmp = NULL
-      # if(is.null(values$indepVar1Values) || (length(values$indepVar1Values)>0 && values$indepVar1Values=="")) {
-      #   values$indepVar1Values = indepVar1ValuesTmp
-      # } else 
       if(is.null(indepVar1ValuesTmp) || !setequal(values$indepVar1Values, indepVar1ValuesTmp)) {
         values$lastParameterChangeTime = Sys.time()
         values$indepVar1Values = indepVar1ValuesTmp
         # Check if empty cells are included in the filter
         values$NAinIndepVar1Values = getLabelOrPrompt("emptyCellsLabel", displayedLabelsAndPrompts) %in% values$indepVar1Values
         # Update data and display
-        # values$filteredFiledata <- filterData()
         values$scatterplotData <- getScatterplotData()
         values$currentDatasetScatterplot <- plottedFigure()
         output$plotScatter <- renderPlot({values$currentDatasetScatterplot})
@@ -1343,17 +1343,17 @@ myApp <- shinyApp(
     })
     
     # Action buttons for multiple modalities (un)checking in the independent variable 1 table
-    output$selectAllIndepVar1Button <- renderUI({
+    output$selectAllIndepVar1ButtonUI <- renderUI({
       if(!is.null(values$independentVariable1) && values$independentVariable1!="\u00A0") {
         actionButton("selectAllIndepVar1Button", getLabelOrPrompt("selectAllIndepVar1ButtonLabel", displayedLabelsAndPrompts))
       }
     })
-    output$unselectAllIndepVar1Button <- renderUI({
+    output$unselectAllIndepVar1ButtonUI <- renderUI({
       if(!is.null(values$independentVariable1) && values$independentVariable1!="\u00A0") {
         actionButton("unselectAllIndepVar1Button", getLabelOrPrompt("unselectAllIndepVar1ButtonLabel", displayedLabelsAndPrompts))
       }
     })
-    output$revertSelectionIndepVar1Button <- renderUI({
+    output$revertSelectionIndepVar1ButtonUI <- renderUI({
       if(!is.null(values$independentVariable1) && values$independentVariable1!="\u00A0") {
         actionButton("revertSelectionIndepVar1Button", getLabelOrPrompt("revertSelectionIndepVar1ButtonLabel", displayedLabelsAndPrompts))
       }
@@ -1377,7 +1377,6 @@ myApp <- shinyApp(
             hot_cols(columnSorting = TRUE, colWidths = c(150, 50, 50))
         )
         # Update data and display
-        # values$filteredFiledata <- filterData()
         values$scatterplotData <- getScatterplotData()
         values$currentDatasetScatterplot <- plottedFigure()
         output$plotScatter <- renderPlot({values$currentDatasetScatterplot})
@@ -1405,7 +1404,6 @@ myApp <- shinyApp(
             hot_cols(columnSorting = TRUE, colWidths = c(150, 50, 50))
         )
         # Update data and display
-        # values$filteredFiledata <- filterData()
         values$scatterplotData <- getScatterplotData()
         values$currentDatasetScatterplot <- plottedFigure()
         output$plotScatter <- renderPlot({values$currentDatasetScatterplot})
@@ -1422,7 +1420,6 @@ myApp <- shinyApp(
       indepVar1DF = hot_to_r(input$indepVar1Table)
       # Set checked modalities as unchecked and conversely
       indepVar1DF[,3] = !as.logical(indepVar1DF[,3])
-      # browser()
       values$indepVar1Values = indepVar1DF[indepVar1DF[,3]==TRUE,1]
       # Update table display
       output$indepVar1Table <- renderRHandsontable(
@@ -1433,7 +1430,6 @@ myApp <- shinyApp(
           hot_cols(columnSorting = TRUE, colWidths = c(150, 50, 50))
       )
       # Update data and display
-      # values$filteredFiledata <- filterData()
       values$scatterplotData <- getScatterplotData()
       values$currentDatasetScatterplot <- plottedFigure()
       output$plotScatter <- renderPlot({values$currentDatasetScatterplot})
@@ -1443,7 +1439,7 @@ myApp <- shinyApp(
     })
     
     # Dropdown menu: independent variable 2 (any variable except dependent variable)
-    output$independentVar2 <- renderUI({
+    output$independentVar2UI <- renderUI({
       df <-values$filedata
       if (is.null(df)) return(NULL)
       
@@ -1461,7 +1457,6 @@ myApp <- shinyApp(
     })
     
     updateIndepVar2filter <- function() {
-    # updateIndepVar2filter <- reactive({
       if(!is.null(input$independentVar2) && input$independentVar2!="\u00A0") {
         
         values$independentVariable2 = input$independentVar2
@@ -1483,20 +1478,20 @@ myApp <- shinyApp(
                   colWidths = c(150, 50, 50)
                 )
             )
-            output$selectAllIndepVar2Button <- renderUI(
+            output$selectAllIndepVar2ButtonUI <- renderUI(
               actionButton("selectAllIndepVar2Button", paste0(getLabelOrPrompt("selectAllIndepVar2ButtonLabel", displayedLabelsAndPrompts), " (", nrow(indepVar2DF), ")"))
             )
-            output$unselectAllIndepVar2Button <- renderUI(
+            output$unselectAllIndepVar2ButtonUI <- renderUI(
               actionButton("unselectAllIndepVar2Button", getLabelOrPrompt("unselectAllIndepVar2ButtonLabel", displayedLabelsAndPrompts))
             )
-            output$revertSelectionIndepVar2Button <- renderUI(
+            output$revertSelectionIndepVar2ButtonUI <- renderUI(
               actionButton("revertSelectionIndepVar2Button", getLabelOrPrompt("revertSelectionIndepVar2ButtonLabel", displayedLabelsAndPrompts))
             )
           } else {
             output$indepVar2Table <- renderRHandsontable({NULL})
-            output$selectAllIndepVar2Button <- renderUI({NULL})
-            output$unselectAllIndepVar2Button <- renderUI({NULL})
-            output$revertSelectionIndepVar2Button <- renderUI({NULL})
+            output$selectAllIndepVar2ButtonUI <- renderUI({NULL})
+            output$unselectAllIndepVar2ButtonUI <- renderUI({NULL})
+            output$revertSelectionIndepVar2ButtonUI <- renderUI({NULL})
           }
         } else {
           # Independent variable 2 identical to independent variable 1: display warning and suspend filtering options for the 2nd variable
@@ -1513,12 +1508,11 @@ myApp <- shinyApp(
             ) %>% 
               hot_cols(colWidths = c(300, .1, .1))
           )
-          output$selectAllIndepVar2Button <- renderUI({NULL})
-          output$unselectAllIndepVar2Button <- renderUI({NULL})
-          output$revertSelectionIndepVar2Button <- renderUI({NULL})
+          output$selectAllIndepVar2ButtonUI <- renderUI({NULL})
+          output$unselectAllIndepVar2ButtonUI <- renderUI({NULL})
+          output$revertSelectionIndepVar2ButtonUI <- renderUI({NULL})
         }
         # Update data and display
-        # values$filteredFiledata <- filterData()
         values$scatterplotData <- getScatterplotData()
         values$currentDatasetScatterplot <- plottedFigure()
         output$plotScatter <- renderPlot({values$currentDatasetScatterplot})
@@ -1528,11 +1522,10 @@ myApp <- shinyApp(
       } else {
         values$independentVariable2 = "\u00A0"
         output$indepVar2Table <- renderRHandsontable({NULL})
-        output$selectAllIndepVar2Button <- renderUI({NULL})
-        output$unselectAllIndepVar2Button <- renderUI({NULL})
-        output$revertSelectionIndepVar2Button <- renderUI({NULL})
+        output$selectAllIndepVar2ButtonUI <- renderUI({NULL})
+        output$unselectAllIndepVar2ButtonUI <- renderUI({NULL})
+        output$revertSelectionIndepVar2ButtonUI <- renderUI({NULL})
         # Update data and display
-        # values$filteredFiledata <- filterData()
         values$scatterplotData <- getScatterplotData()
         values$currentDatasetScatterplot <- plottedFigure()
         output$plotScatter <- renderPlot({values$currentDatasetScatterplot})
@@ -1551,7 +1544,6 @@ myApp <- shinyApp(
     
     # Get independent variable 2 modalities with counts, assigning a special value to empty cells if any
     getIndepVar2Table <- function(){
-      # df <- values$filedata
       df <- values$filteredFiledata
       if (is.null(df) || is.null(values$independentVariable2) || values$independentVariable2 == "\u00A0") return(NULL)
       
@@ -1592,16 +1584,12 @@ myApp <- shinyApp(
       indepVar2ValuesTmp = indepVar2DF[indepVar2DF[,3]==TRUE,1]
       if(length(indepVar2ValuesTmp)==0)
         indepVar2ValuesTmp = NULL
-      # if(is.null(values$indepVar2Values) || (length(values$indepVar2Values)>0 && values$indepVar2Values=="")) {
-      #   values$indepVar2Values = indepVar2ValuesTmp
-      # } else 
       if(is.null(indepVar2ValuesTmp) || !setequal(values$indepVar2Values, indepVar2ValuesTmp)) {
         values$lastParameterChangeTime = Sys.time()
         values$indepVar2Values = indepVar2ValuesTmp
         # Check if empty cells are included in the filter
         values$NAinIndepVar2Values = getLabelOrPrompt("emptyCellsLabel", displayedLabelsAndPrompts) %in% values$indepVar2Values
         # Update data and display
-        # values$filteredFiledata <- filterData()
         values$scatterplotData <- getScatterplotData()
         values$currentDatasetScatterplot <- plottedFigure()
         output$plotScatter <- renderPlot({values$currentDatasetScatterplot})
@@ -1612,17 +1600,17 @@ myApp <- shinyApp(
     })
     
     # Action buttons for multiple modalities (un)checking in the independent variable 2 table
-    output$selectAllIndepVar2Button <- renderUI({
+    output$selectAllIndepVar2ButtonUI <- renderUI({
       if(!is.null(values$independentVariable2) && values$independentVariable2!="\u00A0") {
         actionButton("selectAllIndepVar2Button", getLabelOrPrompt("selectAllIndepVar2ButtonLabel", displayedLabelsAndPrompts))
       }
     })
-    output$unselectAllIndepVar2Button <- renderUI({
+    output$unselectAllIndepVar2ButtonUI <- renderUI({
       if(!is.null(values$independentVariable2) && values$independentVariable2!="\u00A0") {
         actionButton("unselectAllIndepVar2Button", getLabelOrPrompt("unselectAllIndepVar2ButtonLabel", displayedLabelsAndPrompts))
       }
     })
-    output$revertSelectionIndepVar2Button <- renderUI({
+    output$revertSelectionIndepVar2ButtonUI <- renderUI({
       if(!is.null(values$independentVariable2) && values$independentVariable2!="\u00A0") {
         actionButton("revertSelectionIndepVar2Button", getLabelOrPrompt("revertSelectionIndepVar2ButtonLabel", displayedLabelsAndPrompts))
       }
@@ -1721,7 +1709,7 @@ myApp <- shinyApp(
     outputOptions(output, 'selectedDataDetailsDisplayed', suspendWhenHidden=FALSE)
     
     # Set the file format for selected data export
-    output$selectedDataDownloadFormat <- renderUI({
+    output$selectedDataDownloadFormatUI <- renderUI({
       selectInput("selectedDataDownloadFormat", getLabelOrPrompt("selectedDataDownloadFormatLabel", displayedLabelsAndPrompts),availableDataFileOutputFormats)
     })
     
@@ -1746,230 +1734,8 @@ myApp <- shinyApp(
         }
     })
     
-    # # Dropdown menu: filtering variable (any variable except dependent variable)
-    # output$filterVar <- renderUI({
-    #   df <-values$filedata
-    #   if (is.null(df)) return(NULL)
-    #   
-    #   # Include all columns except the selected dependent variable
-    #   datatsetColnames = colnames(df)
-    #   if (length(datatsetColnames)>0) {
-    #     datatsetColnames = values$filedataColnames
-    #     items = datatsetColnames[-which(datatsetColnames==values$dependentVariable)]
-    #     items=c("\u00A0",datatsetColnames)
-    #     names(items)=items
-    #     selectInput("filterVar", getLabelOrPrompt("filterVariableInputLabel", displayedLabelsAndPrompts), choices = items, selected = values$filterVariable)
-    #   } else {
-    #     return("")
-    #   }
-    # })
-    
-    # # When a new filter variable is set, update text and figure display, and display filter modalities with counts in a table
-    # observeEvent(input$filterVar, {
-    #   if(!is.null(values$filterVariable) && values$filterVariable != input$filterVar) {
-    #     if(!is.null(input$filterVar) && input$filterVar!="\u00A0") {
-    #       
-    #       values$filterVariable = input$filterVar
-    #       values$filterValues = ""
-    #       
-    #       # Get and display filter variable modalities with counts
-    #       filterDF = getFilterTable()
-    #       if(!is.null(filterDF)) {
-    #         output$filterValTable <- renderRHandsontable(
-    #           rhandsontable(filterDF, selectCallback = FALSE, stretchH = "all", rowHeaderWidth = 0) %>%
-    #             hot_col(col = 1, readOnly = TRUE) %>%
-    #             hot_col(col = 2, readOnly = TRUE)  %>%
-    #             hot_col(col = 3, type = "checkbox") %>%
-    #             hot_cols(columnSorting = TRUE, colWidths = c(150, 50, 50))
-    #         )
-    #         output$selectAllButton <- renderUI(
-    #           actionButton("selectAllButton", paste0(getLabelOrPrompt("selectAllButtonLabel", displayedLabelsAndPrompts), " (", nrow(filterDF), ")"))
-    #           )
-    #         output$unselectAllButton <- renderUI(
-    #           actionButton("unselectAllButton", getLabelOrPrompt("unselectAllButtonLabel", displayedLabelsAndPrompts))
-    #           )
-    #         output$revertSelectionButton <- renderUI(
-    #           actionButton("revertSelectionButton", getLabelOrPrompt("revertSelectionButtonLabel", displayedLabelsAndPrompts))
-    #           )
-    #       } else {
-    #         output$filterValTable <- renderRHandsontable({NULL})
-    #         output$selectAllButton <- renderUI({NULL})
-    #         output$unselectAllButton <- renderUI({NULL})
-    #         output$revertSelectionButton <- renderUI({NULL})
-    #       }
-    #     } else {
-    #       output$filterValTable <- renderRHandsontable({NULL})
-    #       output$selectAllButton <- renderUI({NULL})
-    #       output$unselectAllButton <- renderUI({NULL})
-    #       output$revertSelectionButton <- renderUI({NULL})
-    #     }
-    #   }
-    # })
-    # 
-    # # Get filter variable modalities with counts, assigning a special value to empty cells if any
-    # getFilterTable <- function(){
-    #   # df <- values$filedata
-    #   df <- values$filteredFiledata
-    #   if (is.null(df) || is.null(values$filterVariable) || values$filterVariable == "\u00A0") return(NULL)
-    #   
-    #   charVector <- df %>% pull(all_of(values$filterVariable)) %>% as.character()
-    #   charVector[is.na(charVector)] = getLabelOrPrompt("emptyCellsLabel", displayedLabelsAndPrompts)
-    #   
-    #   # If a filter column is selected, include all unique values
-    #   filterVarCounts = table(charVector)
-    #   # # Discard categories where count = 1 (not suitable for histogram drawing)
-    #   # filterVarCounts = filterVarCounts[filterVarCounts>1]
-    #   
-    #   subgroupsDF <- data.frame(
-    #     nValues = filterVarCounts,
-    #     selected = rep(TRUE, length(filterVarCounts))
-    #   )
-    #   colnames(subgroupsDF) = c(getLabelOrPrompt("groupColInFilterTable", displayedLabelsAndPrompts), getLabelOrPrompt("countsColInFilterTable", displayedLabelsAndPrompts), getLabelOrPrompt("includeColInFilterTable", displayedLabelsAndPrompts))
-    #   return(subgroupsDF)
-    # }
-    # 
-    # # Dropdown menu: value of the filter variable to be processed (all unique values of the filter variable, displayed with corresponding counts)
-    # output$filterValTable <- renderRHandsontable({
-    #   
-    #   subgroupsDF <- getFilterTable()
-    #   if(!is.null(subgroupsDF)) {
-    #     rhandsontable(subgroupsDF, selectCallback = FALSE, stretchH = "all", rowHeaderWidth = 0) %>%
-    #       hot_col(col = 1, readOnly = TRUE) %>%
-    #       hot_col(col = 2, readOnly = TRUE)  %>%
-    #       hot_col(col = 3, type = "checkbox") %>%
-    #       hot_cols(columnSorting = TRUE, colWidths = c(150, 50, 50))
-    #   } else {
-    #     NULL
-    #   }
-    # })
-    # 
-    # # When filter modalities are checked or unchecked in the filter table, update data and display (figure and text)
-    # observeEvent(input$filterValTable, {
-    #   # Get the contents of the rhandsontable as data frame
-    #   filterDF = hot_to_r(input$filterValTable)
-    #   # Get all checked values
-    #   filterValuesTmp = filterDF[filterDF[,3]==TRUE,1]
-    #   if(length(filterValuesTmp)==0)
-    #     filterValuesTmp = NULL
-    #   if(is.null(values$filterValues) || (length(values$filterValues)==1 && values$filterValues=="")) {
-    #     values$filterValues = filterValuesTmp
-    #   } else if(!setequal(values$filterValues, filterValuesTmp)) {
-    #     values$filterValues = filterValuesTmp
-    #   }
-    #   values$lastParameterChangeTime = Sys.time()
-    #   # Check if empty cells are included in the filter
-    #   values$NAinFilterValues = getLabelOrPrompt("emptyCellsLabel", displayedLabelsAndPrompts) %in% values$filterValues
-    #   # Update data and display
-    #   values$filteredFiledata <- filterData()
-    #   values$scatterplotData <- getScatterplotData()
-    #   values$currentDatasetScatterplot <- plottedFigure()
-    #   output$plotScatter <- renderPlot({values$currentDatasetScatterplot})
-    #   values$descriptiveStatisticsInfoText <- descriptiveStatText()
-    #   output$descriptiveStatisticsInfo <- renderUI({HTML(values$descriptiveStatisticsInfoText)})
-    #   updateCorrelationsTable()
-    # })
-    # 
-    # # Action buttons for multiple modalities (un)checking in the filter table
-    # output$selectAllButton <- renderUI({
-    #   if(!is.null(values$filterVariable) && values$filterVariable!="\u00A0") {
-    #     actionButton("selectAllButton", getLabelOrPrompt("selectAllButtonLabel", displayedLabelsAndPrompts))
-    #   }
-    # })
-    # output$unselectAllButton <- renderUI({
-    #   if(!is.null(values$filterVariable) && values$filterVariable!="\u00A0") {
-    #     actionButton("unselectAllButton", getLabelOrPrompt("unselectAllButtonLabel", displayedLabelsAndPrompts))
-    #   }
-    # })
-    # output$revertSelectionButton <- renderUI({
-    #   if(!is.null(values$filterVariable) && values$filterVariable!="\u00A0") {
-    #     actionButton("revertSelectionButton", getLabelOrPrompt("revertSelectionButtonLabel", displayedLabelsAndPrompts))
-    #   }
-    # })
-    # 
-    # # Update filter table and values when the user hits the 'select all' button
-    # observeEvent(input$selectAllButton, {
-    #   # Get the contents of the rhandsontable as data frame
-    #   filterDF = hot_to_r(input$filterValTable)
-    #   if(!setequal(filterDF[,3], rep(TRUE, nrow(filterDF)))) {
-    #     values$lastParameterChangeTime = Sys.time()
-    #     # Set all modalities as checked
-    #     filterDF[,3] = TRUE
-    #     values$filterValues = filterDF[,1]
-    #     # Update table display
-    #     output$filterValTable <- renderRHandsontable(
-    #       rhandsontable(filterDF, selectCallback = FALSE, stretchH = "all", rowHeaderWidth = 0) %>%
-    #         hot_col(col = 1, readOnly = TRUE) %>%
-    #         hot_col(col = 2, readOnly = TRUE)  %>%
-    #         hot_col(col = 3, type = "checkbox") %>%
-    #         hot_cols(columnSorting = TRUE, colWidths = c(150, 50, 50))
-    #     )
-    #     # Update data and display
-    #     values$filteredFiledata <- filterData()
-    #     values$scatterplotData <- getScatterplotData()
-    #     values$currentDatasetScatterplot <- plottedFigure()
-    #     output$plotScatter <- renderPlot({values$currentDatasetScatterplot})
-    #     values$descriptiveStatisticsInfoText <- descriptiveStatText()
-    #     output$descriptiveStatisticsInfo <- renderUI({HTML(values$descriptiveStatisticsInfoText)})
-    #     updateCorrelationsTable()
-    #   }
-    # })
-    # 
-    # # Update filter table and values when the user hits the 'unselect all' button
-    # observeEvent(input$unselectAllButton, {
-    #   # Get the contents of the rhandsontable as data frame
-    #   filterDF = hot_to_r(input$filterValTable)
-    #   if(!setequal(filterDF[,3], rep(FALSE, nrow(filterDF)))) {
-    #     values$lastParameterChangeTime = Sys.time()
-    #     # Set all modalities as unchecked
-    #     filterDF[,3] = FALSE
-    #     values$filterValues = filterDF[NULL,1]
-    #     # Update table display
-    #     output$filterValTable <- renderRHandsontable(
-    #       rhandsontable(filterDF, selectCallback = FALSE, stretchH = "all", rowHeaderWidth = 0) %>%
-    #         hot_col(col = 1, readOnly = TRUE) %>%
-    #         hot_col(col = 2, readOnly = TRUE)  %>%
-    #         hot_col(col = 3, type = "checkbox") %>%
-    #         hot_cols(columnSorting = TRUE, colWidths = c(150, 50, 50))
-    #     )
-    #     # Update data and display
-    #     values$filteredFiledata <- filterData()
-    #     values$scatterplotData <- getScatterplotData()
-    #     values$currentDatasetScatterplot <- plottedFigure()
-    #     output$plotScatter <- renderPlot({values$currentDatasetScatterplot})
-    #     values$descriptiveStatisticsInfoText <- descriptiveStatText()
-    #     output$descriptiveStatisticsInfo <- renderUI({HTML(values$descriptiveStatisticsInfoText)})
-    #     updateCorrelationsTable()
-    #   }
-    # })
-    # 
-    # # Update filter table and values when the user hits the 'revert selection' button
-    # observeEvent(input$revertSelectionButton, {
-    #   values$lastParameterChangeTime = Sys.time()
-    #   # Get the contents of the rhandsontable as data frame
-    #   filterDF = hot_to_r(input$filterValTable)
-    #   # Set checked modalities as unchecked and conversely
-    #   filterDF[,3] = !as.logical(filterDF[,3])
-    #   values$filterValues = filterDF[filterDF[,3]==TRUE,1]
-    #   # Update table display
-    #   output$filterValTable <- renderRHandsontable(
-    #     rhandsontable(filterDF, selectCallback = FALSE, stretchH = "all", rowHeaderWidth = 0) %>%
-    #       hot_col(col = 1, readOnly = TRUE) %>%
-    #       hot_col(col = 2, readOnly = TRUE)  %>%
-    #       hot_col(col = 3, type = "checkbox") %>%
-    #       hot_cols(columnSorting = TRUE, colWidths = c(150, 50, 50))
-    #   )
-    #   # Update data and display
-    #   values$filteredFiledata <- filterData()
-    #   values$scatterplotData <- getScatterplotData()
-    #   values$currentDatasetScatterplot <- plottedFigure()
-    #   output$plotScatter <- renderPlot({values$currentDatasetScatterplot})
-    #   values$descriptiveStatisticsInfoText <- descriptiveStatText()
-    #   output$descriptiveStatisticsInfo <- renderUI({HTML(values$descriptiveStatisticsInfoText)})
-    #   updateCorrelationsTable()
-    # })
-    
     # Checkbox: reverse the orientation of the X axis
-    output$reverseXaxis <- renderUI({
+    output$reverseXaxisUI <- renderUI({
       df <-values$filedata
       if (is.null(df)) return(NULL)
       checkboxInput("reverseXaxis", "X", FALSE, width="100%")
@@ -1984,7 +1750,7 @@ myApp <- shinyApp(
     })
     
     # Checkbox: reverse the orientation of the Y axis
-    output$reverseYaxis <- renderUI({
+    output$reverseYaxisUI <- renderUI({
       df <-values$filedata
       if (is.null(df)) return(NULL)
       checkboxInput("reverseYaxis", "Y", FALSE, width="100%")
@@ -2049,29 +1815,6 @@ myApp <- shinyApp(
             allValuesXY[is.na(allValuesXY[,values$independentVariable2]), values$independentVariable2] = getLabelOrPrompt("emptyCellsLabel", displayedLabelsAndPrompts)
             allValuesXY[,values$independentVariable2] = as.factor(allValuesXY[,values$independentVariable2])
           }
-          # # Discard unchecked modalities of independent variables
-          # if(!is.null(values$independentVariable1) && values$independentVariable1!="\u00A0") {
-          #   if(!is.null(values$indepVar1Values) && values$indepVar1Values != "")
-          #     allValuesXY = allValuesXY[allValuesXY[,values$independentVariable1] %in% values$indepVar1Values,]
-          #   else if(is.null(values$indepVar1Values))
-          #     allValuesXY = allValuesXY[NULL,]
-          # }
-          # if(!is.null(values$independentVariable2) && values$independentVariable2!="\u00A0") {
-          #   if(!is.null(values$indepVar2Values) && values$indepVar2Values != "")
-          #     allValuesXY = allValuesXY[allValuesXY[,values$independentVariable2] %in% values$indepVar2Values,]
-          #   else if(is.null(values$indepVar2Values))
-          #     allValuesXY = allValuesXY[NULL,]
-          # }
-            
-          # if(!is.null(values$independentVariable1) && values$independentVariable1!="\u00A0") {
-          #   allValuesXY = df[,c(values$dependentVariableX, values$dependentVariableY, values$independentVariable1)]
-          #   if(!is.null(values$indepVar1Values) && values$indepVar1Values != "")
-          #     allValuesXY = allValuesXY[allValuesXY[,values$independentVariable1] %in% values$indepVar1Values,]
-          #   else if(is.null(values$indepVar1Values))
-          #     allValuesXY = allValuesXY[NULL,]
-          # } else {
-          #   allValuesXY = df[,c(values$dependentVariableX, values$dependentVariableY)]
-          # }
             
           # Discard non-finite values of X or Y
           finiteValuesXY <- suppressWarnings(
@@ -2079,10 +1822,7 @@ myApp <- shinyApp(
               mutate(across(all_of(c(values$dependentVariableX, values$dependentVariableY)), as.numeric)) %>% 
               filter(complete.cases(.))
           )
-          # finiteValuesXY = suppressWarnings(allValuesXY[is.finite(as.numeric(as.character(allValuesXY[,values$dependentVariableX]))) & is.finite(as.numeric(as.character(allValuesXY[,values$dependentVariableY]))),])
-          # finiteValuesXY[,values$dependentVariableX] = as.numeric(as.character(finiteValuesXY[,values$dependentVariableX]))
-          # finiteValuesXY[,values$dependentVariableY] = as.numeric(as.character(finiteValuesXY[,values$dependentVariableY]))
-          
+
           # Check that some valid points remain in the dataset
           if(nrow(finiteValuesXY)==0) {
             return(NULL)
@@ -2092,10 +1832,6 @@ myApp <- shinyApp(
               minValX = min(finiteValuesXY[,values$dependentVariableX])
               maxValX = max(finiteValuesXY[,values$dependentVariableX])
               dataRangeX = maxValX - minValX
-              # # add 1% of the range on each side to make sure all points will be displayed
-              # minValX = minValX - dataRangeX*0.01
-              # maxValX = maxValX + dataRangeX*0.01
-              # dataRangeX = maxValX - minValX
               
               limitsInputStepX = 10^round(log10(dataRangeX/nStepsInScaleSettings))
               updateNumericInput(session, "scatterplotLowLimitX", value = minValX, step = limitsInputStepX)
@@ -2104,10 +1840,6 @@ myApp <- shinyApp(
               minValY = min(finiteValuesXY[values$dependentVariableY])
               maxValY = max(finiteValuesXY[values$dependentVariableY])
               dataRangeY = maxValY - minValY
-              # # add 1% of the range on each side to make sure all points will be displayed
-              # minValY = minValY - dataRangeY*0.01
-              # maxValY = maxValY + dataRangeY*0.01
-              # dataRangeY = maxValY - minValY
               
               limitsInputStepY = 10^round(log10(dataRangeY/nStepsInScaleSettings))
               updateNumericInput(session, "scatterplotLowLimitY", value = minValY, step = limitsInputStepY)
@@ -2123,22 +1855,22 @@ myApp <- shinyApp(
     }
     
     # Set the image format of the figure to be exported
-    output$plotDownloadFormat <- renderUI({
+    output$plotDownloadFormatUI <- renderUI({
       selectInput("plotDownloadFormat", getLabelOrPrompt("plotDownloadFormatLabel", displayedLabelsAndPrompts),availableOutputFormats)
     })
     
     # Set the width of the figure when exporting to image file
-    output$exportedPlotWidth <- renderUI({
+    output$exportedPlotWidthUI <- renderUI({
       numericInput("exportedPlotWidth", getLabelOrPrompt("exportedPlotWidthLabel", displayedLabelsAndPrompts), value = defaultExportedPlotWidth)
     })
     
     # Set the height of the figure when exporting to image file
-    output$exportedPlotHeight <- renderUI({
+    output$exportedPlotHeightUI <- renderUI({
       numericInput("exportedPlotHeight", getLabelOrPrompt("exportedPlotHeightLabel", displayedLabelsAndPrompts), value = defaultExportedPlotHeight)
     })
     
     # Set the units for figure export as image
-    output$exportedPlotUnits <- renderUI({
+    output$exportedPlotUnitsUI <- renderUI({
       selectInput("exportedPlotUnits", getLabelOrPrompt("exportedPlotUnitsLabel", displayedLabelsAndPrompts),availableUnitsForImageExport)
     })
     
@@ -2353,12 +2085,9 @@ myApp <- shinyApp(
           numConverted_currentDatasetFull <- suppressWarnings(
             currentDatasetFull %>%
               mutate(across(all_of(c(values$dependentVariableX, values$dependentVariableY)), as.numeric)) # %>% 
-              # filter(complete.cases(.))
           )
           valuesX <- numConverted_currentDatasetFull %>% pull(all_of(values$dependentVariableX))
           valuesY <- numConverted_currentDatasetFull %>% pull(all_of(values$dependentVariableY))
-          # valuesX = suppressWarnings(as.numeric(as.character(currentDatasetFull %>% pull(all_of(values$dependentVariableX)))))
-          # valuesY = suppressWarnings(as.numeric(as.character(currentDatasetFull %>% pull(all_of(values$dependentVariableX)))))
         } else {
           valuesX <- currentDatasetFull %>% pull(all_of(values$dependentVariableX))
           valuesY <- currentDatasetFull %>% pull(all_of(values$dependentVariableY))
@@ -2417,19 +2146,14 @@ myApp <- shinyApp(
         x.range <- c(-x.range[2],-x.range[1])
       if(values$reverseYaxis)
         y.range <- c(-y.range[2],-y.range[1])
-      # if(!is.null(input$plot_brush$xmin) && is.finite(input$plot_brush$xmin) && input$plot_brush$xmin>=x.range[1]  && input$plot_brush$xmax<=x.range[2] && input$plot_brush$ymin>=y.range[1]  && input$plot_brush$ymax<=y.range[2]) {
       if(!is.null(input$plot_brush$xmin) && is.finite(input$plot_brush$xmin) && !is.null(input$plot_brush$xmax) && is.finite(input$plot_brush$xmax) && !is.null(input$plot_brush$ymin) && is.finite(input$plot_brush$ymin) && !is.null(input$plot_brush$ymax) && is.finite(input$plot_brush$ymax)) {
         currentDatasetScatterplotData <- currentDatasetScatterplotInfo$data[[1]]
         # Get the rows corresponding to the selected region in the original dataframe
         currentDatasetFull <- values$filteredFiledata
         if(values$nonNumericColsIncludedInDependentVariableChoiceFlag!=0 && !is.numeric(currentDatasetFull[values$dependentVariable])) {
-          # valuesX <- suppressWarnings(as.numeric(as.character(currentDatasetFull[,values$dependentVariableX])))
-          # valuesY <- suppressWarnings(as.numeric(as.character(currentDatasetFull[,values$dependentVariableY])))
           valuesX <- suppressWarnings(as.numeric(as.character(currentDatasetFull %>% pull(values$dependentVariableX))))
           valuesY <- suppressWarnings(as.numeric(as.character(currentDatasetFull %>% pull(values$dependentVariableY))))
         } else {
-          # valuesX <- currentDatasetFull[,values$dependentVariableX]
-          # valuesY <- currentDatasetFull[,values$dependentVariableY]
           valuesX <- currentDatasetFull %>% pull(values$dependentVariableX)
           valuesY <- currentDatasetFull %>% pull(values$dependentVariableY)
         }
@@ -2451,14 +2175,12 @@ myApp <- shinyApp(
       }
     })
     
-    
     # When a row is selected in the table, store its index to highlight the corresponding point when plotting the figure
     observeEvent(input$selectedDataDetailsTable_select, {
       # Get the selected row index
       values$selectedRowInClickedSubset = input$selectedDataDetailsTable_select$select$r
       # Update the figure display
       values$currentDatasetScatterplot = delete_layers(delete_layers(values$currentDatasetScatterplot, "GeomVline"), "GeomHline")
-      # values$currentDatasetScatterplot <- plottedFigure()
       
       # If a row is selected on the table, highlight it on the plot
       if(!is.null(values$clickedSubset) && nrow(values$clickedSubset)>0 && !is.null(values$selectedRowInClickedSubset)) {
@@ -2489,7 +2211,6 @@ myApp <- shinyApp(
         currentDataset = values$scatterplotData
         
         if(!is.null(currentDataset) && nrow(currentDataset)>0) {
-        # if(!is.null(currentDataset) && !is.na(currentDataset) && nrow(currentDataset)>0) {
           par(mar=c(5,3,2,2)+0.1) # No additional space aroud the scatterplot
           
           indepVar1defined <- FALSE
@@ -2560,52 +2281,6 @@ myApp <- shinyApp(
           # Display points (after ellipses and regression lines to be on top)
           currentDatasetFigure <- currentDatasetFigure +
             geom_point(size = values$pointsSize)
-          
-          # # Set points colors depending on independent variable 1 if selected
-          # if(!is.null(values$independentVariable1) && values$independentVariable1!="\u00A0") {
-          #   plotColors = unlist(values$scatterplotData[,values$independentVariable1])
-          # } else
-          #   plotColors = rep(scatterplotPointsDefaultColor, nrow(currentDataset))
-          # # Set points shape depending on independent variable 2 if selected
-          # if(!is.null(values$independentVariable2) && values$independentVariable2!="\u00A0") {
-          #   plotShapes = unlist(values$scatterplotData[,values$independentVariable2])
-          # } else
-          #   plotShapes = rep(scatterplotPointsDefaultShape, nrow(currentDataset))
-          # 
-          # df = data.frame(
-          #   x = currentDataset %>% pull(all_of(values$dependentVariableX)),
-          #   y = currentDataset %>% pull(all_of(values$dependentVariableY)),
-          #   plotColors = plotColors,
-          #   plotShapes = plotShapes
-          # )
-          # 
-          # # Build base figure
-          # currentDatasetFigure <- ggplot(df, aes(x = x, y = y))
-          # 
-          # # Display regression lines if requested
-          # if(values$displayRegressionLines) {
-          #   currentDatasetFigure <- currentDatasetFigure +
-          #     geom_smooth(aes(colour = factor(plotColors), linetype = factor(plotShapes)), size = values$regressionLinesSize, method = "lm", formula = y ~ x, se = FALSE)
-          # }
-          # # Display points
-          # currentDatasetFigure <- currentDatasetFigure +
-          #   geom_point(aes(colour = factor(plotColors), shape = factor(plotShapes)), size = values$pointsSize)
-          # 
-          # # Show legend for independent variable 1 only if selected
-          # if(!is.null(values$independentVariable1) && values$independentVariable1!="\u00A0")
-          #   currentDatasetFigure <- currentDatasetFigure +
-          #     scale_colour_discrete(name = values$independentVariable1)
-          # else
-          #   currentDatasetFigure <- currentDatasetFigure +
-          #     scale_colour_discrete(guide = "none")
-          # 
-          # # Show legend for independent variable 2 only if selected
-          # if(!is.null(values$independentVariable2) && values$independentVariable2!="\u00A0")
-          #   currentDatasetFigure <- currentDatasetFigure +
-          #   scale_shape_discrete(name = values$independentVariable2)
-          # else
-          #   currentDatasetFigure <- currentDatasetFigure +
-          #     scale_shape_discrete(guide = "none")
 
           # Apply general graphical parameters to the plot to make it nicer
           currentDatasetFigure <- currentDatasetFigure +
@@ -2614,10 +2289,6 @@ myApp <- shinyApp(
             theme(text = element_text(size=values$figureTextSize), axis.text.x = element_text(size=.8*values$figureTextSize), axis.text.y = element_text(size=.8*values$figureTextSize)) +
             xlab(values$dependentVariableX) +
             ylab(values$dependentVariableY) # +
-            # coord_cartesian(
-            #   xlim = c(values$scatterplotLowLimitX, values$scatterplotHighLimitX),
-            #   ylim = c(values$scatterplotLowLimitY, values$scatterplotHighLimitY)
-            #   )
              
           # Reverse axes if requested
           if(values$reverseXaxis) {
@@ -2639,17 +2310,6 @@ myApp <- shinyApp(
               xlim = xlimValues,
               ylim = ylimValues
               )
-          
-          # # If a row is selected on the table with selected points details, higlight it on the plot
-          # if(!is.null(values$clickedSubset) && nrow(values$clickedSubset)>0 && !is.null(values$selectedRowInClickedSubset)) {
-          #   # Get the selected row
-          #   highlightedPointXval = as.numeric(as.character(values$clickedSubset[values$selectedRowInClickedSubset, values$dependentVariableX]))
-          #   highlightedPointYval = as.numeric(as.character(values$clickedSubset[values$selectedRowInClickedSubset, values$dependentVariableY]))
-          #   # Draw a cross on the plot to highlight the selected point
-          #   currentDatasetFigure = currentDatasetFigure +
-          #     geom_vline(xintercept = highlightedPointXval, colour = "grey70", linetype = "dashed") +
-          #     geom_hline(yintercept = highlightedPointYval, colour = "grey70", linetype = "dashed")
-          # }
           
           return(currentDatasetFigure)
         } else {
