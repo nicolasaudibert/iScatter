@@ -101,3 +101,8 @@ displaySelectedDataDetailInTableFlagLabel	Display details of selected values in 
 selectedDataDownloadFormatLabel	File format
 selectedDataDownloadInfo	Export selected subset
 defaultSuffixInExportedDataFileName	_selecteddata
+columnSeparatorTabulation	tabulation (\t)
+columnSeparatorSpace	space
+columnSeparatorComma	comma (,)
+columnSeparatorSemicolon	semicolon (;)
+encodingUnknown	unknown
