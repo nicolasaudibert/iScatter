@@ -22,6 +22,7 @@ The default max file size upload is set to 20MB. To allow the use of larger inpu
 
 For instance, to set it to 30MB use the following:
 maxUploadSizeMB <- 30
+
 To discard the uploaded filesize limit, use the following:
 maxUploadSizeMB <- Inf
 
