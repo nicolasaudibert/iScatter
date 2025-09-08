@@ -22,9 +22,9 @@ htmlHeaderFile <- "iScatter.html"
 labelsFile <- "iScatter.labels.txt"
 nRowsDisplayedInFilePreview <- 20
 nStepsInScaleSettings <- 10
-availableColumnSeparatorsDisplay <- c("tabulation (\\t)", "espace", "virgule (,)" ,"point-virgule (;)")
+# availableColumnSeparatorsDisplay <- c("tabulation (\\t)", "espace", "virgule (,)" ,"point-virgule (;)")
 availableColumnSeparators <- c("\t", " ", ",", ";")
-availableEncodingsDisplay <- c("Unicode (UTF-8)","Windows (latin-1)", "Windows (latin-9)", "Mac OS (MacRoman)", "inconnu")
+# availableEncodingsDisplay <- c("Unicode (UTF-8)","Windows (latin-1)", "Windows (latin-9)", "Mac OS (MacRoman)", "inconnu")
 availableEncodings <- c("UTF-8","latin-1", "latin-9", "macintosh", "unknown")
 availableOutputFormats <- c("PNG","PDF", "EPS", "EMF")
 availableOutputFormatExtensions <- c(".png", ".pdf", ".eps", ".emf")
@@ -45,6 +45,7 @@ defaultEllipseLevel <- 0.95
 defaultEllipseAlpha <- 0.5
 defaultEllipseLinewidth <- 1
 
+# Localization function
 getLabelOrPrompt <- function(code, labelsAndPromptsReference) {
   selectedRow <- labelsAndPromptsReference[labelsAndPromptsReference$entry==code,]
   if(nrow(selectedRow)>0) {
@@ -53,8 +54,23 @@ getLabelOrPrompt <- function(code, labelsAndPromptsReference) {
     return("-- unknown label or prompt --")
   }
 }
-# displayedLabelsAndPrompts <- read.table(file = labelsFile, sep = "\t", header = T, encoding = "UTF-8", quote = "", stringsAsFactors = F)
+# Load localization data
 displayedLabelsAndPrompts <- read_tsv(file = labelsFile, show_col_types = FALSE)
+
+# Get localized constants
+availableColumnSeparatorsDisplay <- c(
+  getLabelOrPrompt("columnSeparatorTabulation", displayedLabelsAndPrompts),
+  getLabelOrPrompt("columnSeparatorSpace", displayedLabelsAndPrompts),
+  getLabelOrPrompt("columnSeparatorComma", displayedLabelsAndPrompts),
+  getLabelOrPrompt("columnSeparatorSemicolon", displayedLabelsAndPrompts)
+)
+availableEncodingsDisplay <- c(
+  "Unicode (UTF-8)",
+  "Windows (latin-1)", 
+  "Windows (latin-9)", 
+  "Mac OS (MacRoman)", 
+  getLabelOrPrompt("encodingUnknown", displayedLabelsAndPrompts)
+)
 
 myApp <- shinyApp(
   # UI side of the app: define layout
