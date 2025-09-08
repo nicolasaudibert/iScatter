@@ -22,6 +22,8 @@ The default max file size upload is set to 20MB. To allow the use of larger inpu
 
 For instance, to set it to 30MB use the following:
 maxUploadSizeMB <- 30
+To discard the uploaded filesize limit, use the following:
+maxUploadSizeMB <- Inf
 
 ## Set language
 TL;DR: To use the English version of the app, you don't need to do anything.
@@ -29,6 +31,6 @@ TL;DR: To use the English version of the app, you don't need to do anything.
 The app uses files iScatter.html and iScatter.labels.txt to define the text displayed.
 These files correspond to files in the 'localization' subfolder named iScatter.[Language].html and iScatter.[Language].labels.txt
 
-Files iScatter.html and iScatter.labels.txt included in the root folder repository are duplicated of files iScatter.English.html and iScatter.English.labels.txt to ensure compatibility with any operating system.
+Files iScatter.html and iScatter.labels.txt included in the root folder repository are duplicates of files iScatter.English.html and iScatter.English.labels.txt to ensure compatibility with any operating system.
 
 To use another language, replace iScatter.html and iScatter.labels.txt with copies of localization files in another language, or use symbolic links to localization files (recommanded). To define localization symbolic links on Linux or MacOS, you may use the shell script set_localization_symlinks_iScatter.sh with the target language as an argument.
